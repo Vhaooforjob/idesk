@@ -77,7 +77,21 @@ macOS has no public API for Spaces, so iDesk works the way other Spaces utilitie
 - Accessibility access to switch desktops; Screen Recording access for previews (optional)
 - To build: Xcode 16 or later and [XcodeGen](https://github.com/yonaskolb/XcodeGen)
 
-## Install and build
+## Download and install
+
+Download the `.dmg` (or the `.zip`) from the [latest release](https://github.com/Vhaooforjob/idesk/releases/latest).
+
+**Requirements:** macOS 14 Sonoma or later, Apple Silicon or Intel.
+
+1. Open the `.dmg` and drag **iDesk** into **Applications** (with the `.zip`, unzip it and move `iDesk.app` to Applications).
+2. Open **iDesk** from Applications. The first time, macOS says it cannot verify the app, because it is not notarized by Apple. This is expected for an independent release. Choose one of:
+   - **System Settings → Privacy & Security**, scroll to *"iDesk" was blocked*, click **Open Anyway**, then confirm. (On macOS 14, right-click the app and choose **Open** instead.)
+   - Or run once in Terminal: `xattr -dr com.apple.quarantine /Applications/iDesk.app`
+3. Grant permissions: iDesk lives in the menu bar. Grant **Accessibility** under **System Settings → Privacy & Security → Accessibility** to switch desktops, and (optionally) **Screen Recording** for live desktop previews, then restart iDesk. Visit each desktop once so its preview can be captured.
+
+Always run iDesk from **Applications** so macOS keeps your permissions. After an update you may have to toggle the permission off and on again, because this build is signed ad hoc. If you want to build from source instead, see below.
+
+## Build from source
 
 ```bash
 swift build
