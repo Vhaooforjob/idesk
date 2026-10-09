@@ -146,4 +146,6 @@ Sources/iDesk
 
 ## License
 
+iDesk is released under the [MIT License](LICENSE).
+
 The Desktop Line's rope, clips, swing and hover reveal are adapted from [Tendedero](https://github.com/alejandrobujan/tendedero) (MIT) by way of iSnap; its license notice is kept at the top of `Sources/iDesk/Views/Line/DesktopLineView.swift`.
