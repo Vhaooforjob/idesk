@@ -165,7 +165,7 @@ private struct HangingDesktopView: View {
     private var card: some View {
         let photo = LineLayout.photoSize(aspect: item.thumbnail.map { $0.size.width / max($0.size.height, 1) } ?? item.aspect)
         return VStack(spacing: 0) {
-            DesktopPhoto(item: item, size: photo, radius: chrome.photoRadius)
+            DesktopPhoto(item: item, size: photo, radius: chrome.photoRadius, tint: chrome.captionColor)
             caption
                 .frame(width: photo.width, height: LineLayout.captionHeight)
         }
@@ -309,11 +309,13 @@ private struct HangingDesktopView: View {
     }
 }
 
-/// The desktop's picture, or a placeholder until it has been visited.
+/// The desktop's picture, or a pane of clear glass until it has been visited.
 private struct DesktopPhoto: View {
     let item: HangingDesktop
     let size: CGSize
     let radius: CGFloat
+    /// The card's text colour, so the icon reads on any card.
+    let tint: Color
 
     var body: some View {
         Group {
@@ -324,10 +326,16 @@ private struct DesktopPhoto: View {
                     .aspectRatio(contentMode: .fill)
             } else {
                 ZStack {
-                    LinearGradient(colors: placeholderColors, startPoint: .topLeading, endPoint: .bottomTrailing)
+                    // Clear glass: nothing is drawn over what is behind it
+                    // except a faint sheen and the edge highlight.
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.16), Color.white.opacity(0.0), Color.white.opacity(0.07)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                     Image(systemName: item.space.kind == .desktop ? "menubar.dock.rectangle" : "macwindow")
                         .font(.system(size: 26, weight: .light))
-                        .foregroundStyle(.white.opacity(0.85))
+                        .foregroundStyle(tint.opacity(0.55))
                 }
             }
         }
@@ -335,13 +343,11 @@ private struct DesktopPhoto: View {
         .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5)
+                .strokeBorder(
+                    LinearGradient(colors: [Color.white.opacity(item.thumbnail == nil ? 0.6 : 0.18), Color.white.opacity(0.1)], startPoint: .top, endPoint: .bottom),
+                    lineWidth: item.thumbnail == nil ? 0.75 : 0.5
+                )
         )
-    }
-
-    private var placeholderColors: [Color] {
-        let hue = HangingDesktop.hue(for: item.id)
-        return [Color(hue: hue, saturation: 0.55, brightness: 0.85), Color(hue: (hue + 0.12).truncatingRemainder(dividingBy: 1), saturation: 0.65, brightness: 0.6)]
     }
 }
 

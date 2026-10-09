@@ -17,11 +17,6 @@ struct HangingDesktop: Identifiable, Equatable {
         Double(hash(id) % 1000) / 1000 * 5 - 2.5
     }
 
-    /// A colour of its own for a desktop that has no picture yet.
-    static func hue(for id: String) -> Double {
-        Double((hash(id) >> 10) % 360) / 360
-    }
-
     /// djb2, then mixed so that similar ids land far apart.
     private static func hash(_ id: String) -> UInt64 {
         var hash: UInt64 = 5381
