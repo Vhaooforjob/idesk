@@ -4,7 +4,11 @@
 
 <p align="center"><b>Name your Mac desktops and hang them under the menu bar.</b><br>Every desktop (Space) hangs on a line with a live preview and its own name. Click one to go there.</p>
 
-<p align="center"><img src="docs/assets/styles/clothesline.png" width="820" alt="Four named desktops hanging on a clothesline under the menu bar"></p>
+<p align="center">
+  <a href="docs/assets/idesk-showreel.mp4"><img src="docs/assets/idesk-showreel-preview.webp" width="820" alt="iDesk in motion: naming desktops, the Desktop Line, six hanging styles, effects, and screens for presenting. Click for the full video with sound."></a>
+  <br>
+  <sub>▶ <a href="docs/assets/idesk-showreel.mp4">Watch the full 60-second showreel with sound</a></sub>
+</p>
 
 iDesk is a menu bar app written in Swift with SwiftUI, AppKit, and ScreenCaptureKit, built from the same Capture Line that iSnap uses for screenshots.
 
