@@ -1,0 +1,42 @@
+name: iDesk
+options:
+  bundleIdPrefix: dev.idesk
+  developmentLanguage: en
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: 5.0
+    MACOSX_DEPLOYMENT_TARGET: 14.0
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: TXD67UY7X2
+    ENABLE_HARDENED_RUNTIME: YES
+targets:
+  iDesk:
+    type: application
+    platform: macOS
+    sources:
+      - Sources/iDesk
+      - path: Assets.xcassets
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.idesk.app
+        PRODUCT_NAME: iDesk
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Sources/iDesk/Resources/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_ENTITLEMENTS: Sources/iDesk/Resources/iDesk.entitlements
+        SWIFT_EMIT_LOC_STRINGS: YES
+        LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    scheme:
+      testTargets:
+        - iDeskTests
+  iDeskTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Tests/iDeskTests
+    dependencies:
+      - target: iDesk

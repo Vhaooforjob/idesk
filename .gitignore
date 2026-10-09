@@ -1,0 +1,10 @@
+.DS_Store
+.build/
+DerivedData/
+build/
+dist/
+*.xcuserstate
+xcuserdata/
+.swiftpm/
+Package.resolved
+brag-output*/

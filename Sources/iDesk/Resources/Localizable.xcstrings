@@ -1,0 +1,1336 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Accessibility": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trợ năng"
+          }
+        }
+      }
+    },
+    "Add Desktop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm desktop"
+          }
+        }
+      }
+    },
+    "All Screens On": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật mọi màn"
+          }
+        }
+      }
+    },
+    "Allow Switching Desktops…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cho phép chuyển desktop…"
+          }
+        }
+      }
+    },
+    "Allow iDesk to switch desktops": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cho phép iDesk chuyển desktop"
+          }
+        }
+      }
+    },
+    "Allow…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cho phép…"
+          }
+        }
+      }
+    },
+    "Always Show": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luôn hiện"
+          }
+        }
+      }
+    },
+    "At least one screen has to stay on.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phải có ít nhất một màn hình đang bật."
+          }
+        }
+      }
+    },
+    "Autumn Leaves": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lá thu"
+          }
+        }
+      }
+    },
+    "Bounce": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nảy"
+          }
+        }
+      }
+    },
+    "Breeze": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thổi gió"
+          }
+        }
+      }
+    },
+    "Built-in Display": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Màn hình tích hợp"
+          }
+        }
+      }
+    },
+    "Bunting": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dây cờ"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Huỷ"
+          }
+        }
+      }
+    },
+    "Cherry Petals": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cánh hoa anh đào"
+          }
+        }
+      }
+    },
+    "Clothesline": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dây phơi"
+          }
+        }
+      }
+    },
+    "Connect a second screen to choose which ones are on.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy kết nối màn hình thứ hai để chọn màn nào được bật."
+          }
+        }
+      }
+    },
+    "Could not add a desktop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể thêm desktop"
+          }
+        }
+      }
+    },
+    "Could not change the screens": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể thay đổi màn hình"
+          }
+        }
+      }
+    },
+    "Could not delete the desktop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể xoá desktop"
+          }
+        }
+      }
+    },
+    "Current": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện tại"
+          }
+        }
+      }
+    },
+    "Custom": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuỳ chỉnh"
+          }
+        }
+      }
+    },
+    "Delete": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá"
+          }
+        }
+      }
+    },
+    "Delete Desktop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá desktop"
+          }
+        }
+      }
+    },
+    "Delete Desktop…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá desktop…"
+          }
+        }
+      }
+    },
+    "Delete “%@”?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá “%@”?"
+          }
+        }
+      }
+    },
+    "Desktop %lld": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desktop %lld"
+          }
+        }
+      }
+    },
+    "Desktop Line": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dây Desktop"
+          }
+        }
+      }
+    },
+    "Desktop Name": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên desktop"
+          }
+        }
+      }
+    },
+    "Desktops": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desktop"
+          }
+        }
+      }
+    },
+    "Display %lld": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Màn hình %lld"
+          }
+        }
+      }
+    },
+    "External Display": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Màn hình ngoài"
+          }
+        }
+      }
+    },
+    "External Screen Only": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ màn phụ"
+          }
+        }
+      }
+    },
+    "External screen": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Màn phụ"
+          }
+        }
+      }
+    },
+    "Fairy Lights": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đèn nháy"
+          }
+        }
+      }
+    },
+    "Full Screen": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toàn màn hình"
+          }
+        }
+      }
+    },
+    "General": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chung"
+          }
+        }
+      }
+    },
+    "Gentle Breeze": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gió nhẹ"
+          }
+        }
+      }
+    },
+    "Give %@ a name. Leave it empty to use the default name.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đặt tên cho %@. Để trống để dùng tên mặc định."
+          }
+        }
+      }
+    },
+    "Glass Pill": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viên kính"
+          }
+        }
+      }
+    },
+    "Glow": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phát sáng"
+          }
+        }
+      }
+    },
+    "Go": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đến"
+          }
+        }
+      }
+    },
+    "Go to This Desktop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển đến desktop này"
+          }
+        }
+      }
+    },
+    "Hang full screen apps too": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treo cả ứng dụng toàn màn hình"
+          }
+        }
+      }
+    },
+    "Hanging Sign": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Biển treo"
+          }
+        }
+      }
+    },
+    "Hanging Style": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểu treo"
+          }
+        }
+      }
+    },
+    "Icon Only": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ biểu tượng"
+          }
+        }
+      }
+    },
+    "In Mission Control, click + at the top right of the screen.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trong Mission Control, bấm dấu + ở góc trên bên phải màn hình."
+          }
+        }
+      }
+    },
+    "In Mission Control, point at “%@” at the top of the screen and click its ✕.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trong Mission Control, rê chuột vào “%@” ở đầu màn hình rồi bấm dấu ✕ của nó."
+          }
+        }
+      }
+    },
+    "Its windows move to another desktop. Mission Control opens for a moment to do this.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các cửa sổ của nó sẽ chuyển sang desktop khác. Mission Control sẽ mở trong giây lát để làm việc này."
+          }
+        }
+      }
+    },
+    "Keep": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giữ"
+          }
+        }
+      }
+    },
+    "Keep this screen setup?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giữ cấu hình màn hình này?"
+          }
+        }
+      }
+    },
+    "Language": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngôn ngữ"
+          }
+        }
+      }
+    },
+    "Later": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Để sau"
+          }
+        }
+      }
+    },
+    "Look": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giao diện"
+          }
+        }
+      }
+    },
+    "Magnetic Rail": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thanh nam châm"
+          }
+        }
+      }
+    },
+    "Main Screen Only": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ màn chính"
+          }
+        }
+      }
+    },
+    "Main screen": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Màn chính"
+          }
+        }
+      }
+    },
+    "Menu Bar": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thanh menu"
+          }
+        }
+      }
+    },
+    "Menu bar shows": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thanh menu hiển thị"
+          }
+        }
+      }
+    },
+    "Mission Control did not show its desktops to iDesk.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mission Control không cho iDesk thấy các desktop."
+          }
+        }
+      }
+    },
+    "Mission Control does not show this desktop.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mission Control không hiển thị desktop này."
+          }
+        }
+      }
+    },
+    "Mission Control does not show this display.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mission Control không hiển thị màn hình này."
+          }
+        }
+      }
+    },
+    "Mission Control refused the change.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mission Control từ chối thay đổi."
+          }
+        }
+      }
+    },
+    "Name Banner": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bảng tên"
+          }
+        }
+      }
+    },
+    "Name banner after switching": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bảng tên sau khi chuyển"
+          }
+        }
+      }
+    },
+    "Name every desktop. Names are kept by iDesk and follow each desktop even when you reorder them in Mission Control.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đặt tên cho từng desktop. iDesk lưu tên và tên đi theo desktop kể cả khi bạn sắp xếp lại trong Mission Control."
+          }
+        }
+      }
+    },
+    "Needed to switch desktops: iDesk presses the Mission Control shortcuts for you.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cần để chuyển desktop: iDesk bấm phím tắt Mission Control giúp bạn."
+          }
+        }
+      }
+    },
+    "No desktops found": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không tìm thấy desktop"
+          }
+        }
+      }
+    },
+    "No desktops yet": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có desktop"
+          }
+        }
+      }
+    },
+    "None": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không"
+          }
+        }
+      }
+    },
+    "Number and Name": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Số và tên"
+          }
+        }
+      }
+    },
+    "OK": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "Off": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tắt"
+          }
+        }
+      }
+    },
+    "Only %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ %@"
+          }
+        }
+      }
+    },
+    "Only with Shortcut": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ khi bấm phím tắt"
+          }
+        }
+      }
+    },
+    "Open Keyboard Settings": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở cài đặt Bàn phím"
+          }
+        }
+      }
+    },
+    "Open Mission Control": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở Mission Control"
+          }
+        }
+      }
+    },
+    "Open System Settings": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở Cài đặt hệ thống"
+          }
+        }
+      }
+    },
+    "Open iDesk at login": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở iDesk khi đăng nhập"
+          }
+        }
+      }
+    },
+    "Optional. Lets iDesk keep a small picture of each desktop. Without it, the wallpaper is shown.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không bắt buộc. Cho phép iDesk lưu ảnh nhỏ của từng desktop. Nếu không, hình nền sẽ được hiển thị."
+          }
+        }
+      }
+    },
+    "Particles": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hạt bay"
+          }
+        }
+      }
+    },
+    "Permissions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quyền truy cập"
+          }
+        }
+      }
+    },
+    "Picture Frames": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khung tranh"
+          }
+        }
+      }
+    },
+    "Play Switch Effect": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phát hiệu ứng chuyển"
+          }
+        }
+      }
+    },
+    "Play a sound when switching": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phát âm thanh khi chuyển"
+          }
+        }
+      }
+    },
+    "Previews are taken while you are on a desktop. Visit each desktop once to see its picture.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh xem trước được chụp khi bạn đang ở desktop đó. Hãy ghé mỗi desktop một lần để thấy ảnh."
+          }
+        }
+      }
+    },
+    "Quit iDesk": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thoát iDesk"
+          }
+        }
+      }
+    },
+    "Rename": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi tên"
+          }
+        }
+      }
+    },
+    "Rename Current Desktop…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi tên desktop hiện tại…"
+          }
+        }
+      }
+    },
+    "Rename Desktop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi tên desktop"
+          }
+        }
+      }
+    },
+    "Rename current desktop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi tên desktop hiện tại"
+          }
+        }
+      }
+    },
+    "Rename…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi tên…"
+          }
+        }
+      }
+    },
+    "Restart Now": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khởi động lại ngay"
+          }
+        }
+      }
+    },
+    "Restart iDesk to change the language?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khởi động lại iDesk để đổi ngôn ngữ?"
+          }
+        }
+      }
+    },
+    "Screen Recording": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghi màn hình"
+          }
+        }
+      }
+    },
+    "Screens": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Màn hình"
+          }
+        }
+      }
+    },
+    "Settings…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài đặt…"
+          }
+        }
+      }
+    },
+    "Shortcuts": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phím tắt"
+          }
+        }
+      }
+    },
+    "Show desktop previews": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện ảnh xem trước desktop"
+          }
+        }
+      }
+    },
+    "Show on Hover": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện khi rê chuột"
+          }
+        }
+      }
+    },
+    "Show or Hide the Line": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện hoặc ẩn dây"
+          }
+        }
+      }
+    },
+    "Show or hide the line": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện hoặc ẩn dây"
+          }
+        }
+      }
+    },
+    "Show the line": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện dây"
+          }
+        }
+      }
+    },
+    "Snow": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuyết"
+          }
+        }
+      }
+    },
+    "Sparkles": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lấp lánh"
+          }
+        }
+      }
+    },
+    "Spin": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoay"
+          }
+        }
+      }
+    },
+    "Startup": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khởi động"
+          }
+        }
+      }
+    },
+    "Still": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đứng yên"
+          }
+        }
+      }
+    },
+    "Strings": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dây đơn"
+          }
+        }
+      }
+    },
+    "Sway": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đung đưa"
+          }
+        }
+      }
+    },
+    "Swing": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lắc lư"
+          }
+        }
+      }
+    },
+    "Switch Effect": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiệu ứng chuyển"
+          }
+        }
+      }
+    },
+    "Switch effect": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiệu ứng chuyển"
+          }
+        }
+      }
+    },
+    "System Default": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mặc định hệ thống"
+          }
+        }
+      }
+    },
+    "The last screen on stays on.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Màn cuối cùng đang bật sẽ luôn được giữ bật."
+          }
+        }
+      }
+    },
+    "The new language is used the next time iDesk opens.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngôn ngữ mới được dùng ở lần mở iDesk tiếp theo."
+          }
+        }
+      }
+    },
+    "The screens go back to how they were in %lld seconds.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Màn hình sẽ trở lại như cũ sau %lld giây."
+          }
+        }
+      }
+    },
+    "This version of macOS does not let iDesk turn screens off.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phiên bản macOS này không cho iDesk tắt màn hình."
+          }
+        }
+      }
+    },
+    "Turn Every Screen Back On": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật lại mọi màn hình"
+          }
+        }
+      }
+    },
+    "Turn Screens On or Off": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật hoặc tắt màn hình"
+          }
+        }
+      }
+    },
+    "Turn every screen back on": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật lại mọi màn hình"
+          }
+        }
+      }
+    },
+    "Turn on a Mission Control shortcut": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật phím tắt Mission Control"
+          }
+        }
+      }
+    },
+    "Turning a screen off asks you to keep the change, and undoes it after %lld seconds without an answer. Logging out or quitting iDesk turns every screen back on.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi tắt một màn hình, iDesk sẽ hỏi bạn có giữ thay đổi không, và tự hoàn tác sau %lld giây nếu không trả lời. Đăng xuất hoặc thoát iDesk sẽ bật lại mọi màn hình."
+          }
+        }
+      }
+    },
+    "Undo": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoàn tác"
+          }
+        }
+      }
+    },
+    "Use Default Name": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dùng tên mặc định"
+          }
+        }
+      }
+    },
+    "Which screens are on": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Màn hình nào đang bật"
+          }
+        }
+      }
+    },
+    "Windy": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gió mạnh"
+          }
+        }
+      }
+    },
+    "Write shortcuts with ⌃ ⌥ ⇧ ⌘ and a key, for example ⌃⌥D.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghi phím tắt bằng ⌃ ⌥ ⇧ ⌘ và một phím, ví dụ ⌃⌥D."
+          }
+        }
+      }
+    },
+    "iDesk Settings": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài đặt iDesk"
+          }
+        }
+      }
+    },
+    "iDesk switches desktops with “Move left a space” and “Move right a space”, or “Switch to Desktop N”. Turn them on in System Settings → Keyboard → Keyboard Shortcuts → Mission Control.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iDesk chuyển desktop bằng “Di chuyển sang trái một không gian”, “Di chuyển sang phải một không gian” hoặc “Chuyển sang Desktop N”. Hãy bật chúng trong Cài đặt hệ thống → Bàn phím → Phím tắt → Mission Control."
+          }
+        }
+      }
+    },
+    "macOS only lets apps switch desktops by pressing the Mission Control shortcuts. Turn on iDesk under Privacy & Security → Accessibility, then click the desktop again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS chỉ cho phép ứng dụng chuyển desktop bằng cách bấm phím tắt Mission Control. Hãy bật iDesk trong Quyền riêng tư & Bảo mật → Trợ năng, rồi bấm lại vào desktop."
+          }
+        }
+      }
+    },
+    "macOS refused the screen change (error %lld).": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS từ chối thay đổi màn hình (lỗi %lld)."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
