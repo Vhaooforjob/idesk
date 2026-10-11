@@ -17,6 +17,7 @@ final class AppEnvironment {
     let banner: NameBannerViewModel
     let menuBar: MenuBarViewModel
     let displays: DisplaysViewModel
+    var showWindowPicker: (() -> Void)?
 
     private let hotkeys = HotkeyService()
     private var cancellables: Set<AnyCancellable> = []
@@ -55,11 +56,12 @@ final class AppEnvironment {
             case .toggleLine: self?.line.toggle()
             case .renameCurrent: self?.desktops.renameCurrent()
             case .restoreDisplays: self?.displays.turnEverythingOn()
+            case .moveWindow: self?.showWindowPicker?()
             }
         }
         settingsStore.$value
             .map { [HotkeyService.Action.toggleLine: $0.toggleLineHotkey, .renameCurrent: $0.renameHotkey,
-                    .restoreDisplays: $0.restoreDisplaysHotkey] }
+                    .restoreDisplays: $0.restoreDisplaysHotkey, .moveWindow: $0.moveWindowHotkey] }
             .removeDuplicates()
             .sink { [weak self] shortcuts in self?.hotkeys.register(shortcuts) }
             .store(in: &cancellables)

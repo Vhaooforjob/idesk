@@ -12,6 +12,14 @@
 
 iDesk is a menu bar app written in Swift with SwiftUI, AppKit, and ScreenCaptureKit, built from the same Capture Line that iSnap uses for screenshots.
 
+## What's new in v1.1.0
+
+See [CHANGELOG.md](CHANGELOG.md) for the release notes.
+
+- Move a window to another desktop from a searchable picker (`⌃⌥M`) or from the Desktop Line.
+- Group menu options under **Desktop Actions** and **Appearance**.
+- Restore the main screen when an external-only screen is disconnected, and restore the selected external screen when it reconnects.
+
 ## Highlights
 
 ### Name every desktop
@@ -26,11 +34,21 @@ Rest the pointer in the menu bar and the line slides down with every desktop on 
 
 Right-click a card, use the menu bar's **Add Desktop** and **Delete Desktop**, or the buttons in **Settings → Desktops**. Deleting asks first; the desktop's windows move to another one. The desktop you are on, the last desktop on a display, and full screen apps cannot be deleted.
 
+### Move a window to another desktop
+
+Press **⌃⌥M** to open the window picker, or choose **Move a Window…** from the menu bar. Search by application or window title, select a window, choose a destination card, and press **Move and Follow** (Return). Up/Down in the search field selects a window; Esc or the same shortcut closes the popup. The picker lists regular windows on the currently visible desktops, with app icons and titles, and uses saved desktop previews when available. No Screen Recording permission is needed to list windows. Change or clear the shortcut under **Settings → General → Shortcuts → Open window picker**.
+
+Select the application window, then **Shift-click** the destination's card on the Desktop Line. iDesk moves that window and follows it to the destination, ready to use. You can also use the menu bar's **Move Window to Desktop** submenu or right-click a card and choose **Move Window Here and Follow**.
+
+This requires Accessibility access and works between regular desktops on the same display. Exit full screen or Split View first; windows assigned to all desktops must be unpinned. iDesk keeps the window selected when the menu opens and checks that it reached the destination before switching there. Following uses the existing Mission Control keyboard shortcuts.
+
 ### Screens for streaming and presenting
 
 With more than one screen connected, the menu bar's **Screens** submenu and **Settings → Screens** choose which screens are on: **All Screens On**, **Main Screen Only**, **Only <screen>** (one choice per external screen), or each screen on and off by itself. iDesk never changes what a screen shows or its resolution.
 
 Turning a screen off asks you to keep the change and undoes it after 15 seconds without an answer, in case the dialog ended up on a dark screen. `⌃⌥⌘D` turns every screen back on, and so do quitting iDesk and logging out.
+
+With **External Screen Only**, unplugging that screen automatically brings the main screen back on. Reconnecting the same screen restores external-only mode once it is active, even if macOS assigns it a new display ID. iDesk remembers this choice while it is running; choosing another layout or turning every screen back on cancels it.
 
 ### Six ways to hang
 
@@ -51,7 +69,7 @@ Turning a screen off asks you to keep the change and undoes it after 15 seconds 
 - **Name banner** after each switch: a Hanging Sign that drops and swings on its strings, or a Glass Pill
 - Cards drop in and swing when the line comes down, and lean over when hovered
 
-Everything is in the menu bar icon's menu and in **Settings → Look**, which has a live preview.
+Visual choices and language are grouped under **Appearance** in the menu bar. Rename, add, delete, and direct window moves are under **Desktop Actions**; the window picker and Show/Hide the Line stay at the top level. **Settings → Look** has a live preview.
 
 ### And more
 
@@ -69,6 +87,7 @@ macOS has no public API for Spaces, so iDesk works the way other Spaces utilitie
 - **Previews** need **Screen Recording** access (optional). macOS cannot show a desktop you are not on, so each picture is taken while you are on that desktop and refreshed every 20 seconds while you stay. Visit each desktop once after installing. Without the permission, the wallpaper stands in. iDesk's own windows are left out of the pictures, and the pictures stay on your Mac in `~/Library/Caches/dev.idesk.app`.
 
 - **Adding and deleting desktops** uses Mission Control's own buttons through Accessibility (the approach of Hammerspoon's `hs.spaces`): iDesk opens Mission Control for a moment, presses the button, and closes it. If Mission Control does not show its buttons to iDesk, iDesk says so and offers to open Mission Control so you can do it by hand.
+- **Moving a window** reads the focused window through Accessibility and uses private SkyLight calls, including the compatibility-workspace route on macOS 14.5 and later described by [Hammerspoon](https://github.com/Hammerspoon/hammerspoon/blob/master/extensions/spaces/libspaces.m). Symbols are loaded at runtime and the window's Space membership is checked afterward; unsupported systems show an error.
 - **Turning a screen off** uses the window server's private `CGSConfigureDisplayEnabled`, as display utilities do; every change lasts for the login session only.
 
 ## Requirements
@@ -131,7 +150,7 @@ Sources/iDesk
 │                DisplaysViewModel     which screens are on, confirm-or-undo
 │                SettingsViewModel     everything the Settings window edits
 │                DialogPresenting      the questions view models ask the user
-├── Services     SpaceService, SpaceSwitcher, MissionControlService, DisplayService,
+├── Services     SpaceService, SpaceSwitcher, WindowMoveService, MissionControlService, DisplayService,
 │                ThumbnailStore, PermissionService, HotkeyService,
 │                SettingsStore, LaunchAtLoginService, AppRelauncher
 └── Views

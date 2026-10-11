@@ -92,6 +92,19 @@ final class DesktopLineViewModel: ObservableObject {
         desktops.rename(space)
     }
 
+    func windowMoveAction(to space: DesktopSpace) -> (() -> Void)? {
+        guard let desktops else { return nil }
+        let selection = desktops.captureWindowForMove()
+        guard desktops.windowMoveDestinations(for: selection).contains(where: { $0.id == space.id }) else { return nil }
+        return { Task { await desktops.moveWindow(selection, to: space) } }
+    }
+
+    func moveWindow(to space: DesktopSpace) {
+        guard let desktops else { return }
+        let selection = desktops.captureWindowForMove()
+        Task { await desktops.moveWindow(selection, to: space) }
+    }
+
     func resetName(_ space: DesktopSpace) {
         desktops?.resetName(space)
     }

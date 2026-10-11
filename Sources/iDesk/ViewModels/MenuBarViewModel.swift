@@ -37,6 +37,7 @@ final class MenuBarViewModel: ObservableObject {
     private let settingsStore: SettingsStore
     private let dialogs: DialogPresenting
     private var cancellables: Set<AnyCancellable> = []
+    private var windowSelection: Result<WindowSelection, Error> = .failure(WindowMoveError.noWindow)
 
     init(desktops: DesktopsViewModel, line: DesktopLineViewModel, displays: DisplaysViewModel,
          settingsStore: SettingsStore, dialogs: DialogPresenting) {
@@ -75,6 +76,7 @@ final class MenuBarViewModel: ObservableObject {
 
     /// Re-reads the Spaces just before the menu opens.
     func refresh() {
+        windowSelection = desktops.captureWindowForMove()
         desktops.reload()
         displays.refresh()
         updateTitle()
@@ -97,6 +99,19 @@ final class MenuBarViewModel: ObservableObject {
     /// on a display.
     var deletableDesktops: [DesktopEntry] {
         sections.flatMap(\.entries).filter { desktops.canDelete($0.space) }
+    }
+
+    var moveWindowGroup: ChoiceGroup {
+        let selection = windowSelection
+        return ChoiceGroup(title: String(localized: "Move Window to Desktop"), choices:
+            desktops.windowMoveDestinations(for: selection).map { space in
+                Choice(title: "\(space.number ?? space.position + 1)  \(desktops.name(for: space))",
+                       symbol: "macwindow", isSelected: false) { [weak self] in
+                    guard let self else { return }
+                    Task { await self.desktops.moveWindow(selection, to: space) }
+                }
+            }
+        )
     }
 
     /// The Screens submenu: what the screens show, and each screen on or
@@ -127,6 +142,7 @@ final class MenuBarViewModel: ObservableObject {
     var needsSwitchingPermission: Bool { !PermissionService.canSwitchDesktops }
     var restoreDisplaysShortcut: String { settingsStore.value.restoreDisplaysHotkey }
     var renameShortcut: String { settingsStore.value.renameHotkey }
+    var moveWindowShortcut: String { settingsStore.value.moveWindowHotkey }
     var toggleShortcut: String { settingsStore.value.toggleLineHotkey }
 
     var choiceGroups: [ChoiceGroup] {

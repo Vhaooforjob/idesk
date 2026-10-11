@@ -7,9 +7,9 @@ APP="iDesk"
 cd "$(dirname "$0")/.."
 
 VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "Sources/$APP/Resources/Info.plist")
-DERIVED="build/DerivedDataRelease"
+DERIVED="build/DerivedDataRelease-$VERSION"
 OUT="dist"
-STAGE="build/release-stage"
+STAGE="build/release-stage-$VERSION"
 NAME="$APP-$VERSION-macOS-universal"
 
 xcodegen generate

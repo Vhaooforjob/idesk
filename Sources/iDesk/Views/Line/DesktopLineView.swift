@@ -382,12 +382,17 @@ private struct CardClickArea: NSViewRepresentable {
         let id = item.id
         let viewModel = viewModel
         view.onClick = { viewModel.select(space) }
+        view.onShiftClick = { viewModel.moveWindow(to: space) }
+        view.toolTip = String(localized: "Click to switch desktops. Shift-click to move the focused window here and follow it.")
         view.onRename = { viewModel.rename(space) }
         view.onPressChange = { viewModel.pressedID = $0 ? id : nil }
         view.menuProvider = {
             let menu = NSMenu()
             if !space.isCurrent {
                 menu.addItem(LineMenuItem(String(localized: "Go to This Desktop")) { viewModel.select(space) })
+            }
+            if let move = viewModel.windowMoveAction(to: space) {
+                menu.addItem(LineMenuItem(String(localized: "Move Window Here and Follow"), handler: move))
             }
             menu.addItem(LineMenuItem(String(localized: "Rename…")) { viewModel.rename(space) })
             menu.addItem(LineMenuItem(String(localized: "Use Default Name")) { viewModel.resetName(space) })
@@ -407,6 +412,7 @@ final class CardClickView: NSView {
     static var isShowingMenu = false
 
     var onClick: () -> Void = {}
+    var onShiftClick: () -> Void = {}
     var onRename: () -> Void = {}
     var onPressChange: (Bool) -> Void = { _ in }
     var menuProvider: () -> NSMenu = { NSMenu() }
@@ -427,7 +433,7 @@ final class CardClickView: NSView {
 
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
-        if renameCorner.contains(point) {
+        if renameCorner.contains(point) && !event.modifierFlags.contains(.shift) {
             onRename()
             return
         }
@@ -439,7 +445,9 @@ final class CardClickView: NSView {
         guard isPressing else { return }
         isPressing = false
         onPressChange(false)
-        if bounds.contains(convert(event.locationInWindow, from: nil)) { onClick() }
+        if bounds.contains(convert(event.locationInWindow, from: nil)) {
+            if event.modifierFlags.contains(.shift) { onShiftClick() } else { onClick() }
+        }
     }
 
     override func rightMouseDown(with event: NSEvent) {

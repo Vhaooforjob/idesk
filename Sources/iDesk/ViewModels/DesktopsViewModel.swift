@@ -16,7 +16,9 @@ final class DesktopsViewModel {
     private let spaceService: SpaceService
     private let thumbnailStore: ThumbnailStore
     private let settingsStore: SettingsStore
-    private let switcher: SpaceSwitcher
+    private let switcher: SpaceSwitching
+    private let windowMover: WindowMoving
+    private var isMovingWindow = false
     private let desktopManager: DesktopManaging
     private let dialogs: DialogPresenting
     private var lastCurrent: [String: String] = [:]
@@ -27,11 +29,13 @@ final class DesktopsViewModel {
     private static let settleDelay: TimeInterval = 0.9
 
     init(spaceService: SpaceService, thumbnailStore: ThumbnailStore, settingsStore: SettingsStore,
-         switcher: SpaceSwitcher, desktopManager: DesktopManaging, dialogs: DialogPresenting) {
+         switcher: SpaceSwitching, desktopManager: DesktopManaging, dialogs: DialogPresenting,
+         windowMover: WindowMoving? = nil) {
         self.spaceService = spaceService
         self.thumbnailStore = thumbnailStore
         self.settingsStore = settingsStore
         self.switcher = switcher
+        self.windowMover = windowMover ?? WindowMoveService()
         self.desktopManager = desktopManager
         self.dialogs = dialogs
     }
@@ -158,6 +162,58 @@ final class DesktopsViewModel {
 
     private func rememberCurrent() {
         lastCurrent = Dictionary(spaces.filter(\.isCurrent).map { ($0.displayID, $0.id) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    // MARK: Moving windows
+
+    func captureWindowForMove() -> Result<WindowSelection, Error> {
+        Result { try windowMover.captureFocusedWindow() }
+    }
+
+    func windowsForMove() async throws -> [WindowCandidate] {
+        try await windowMover.availableWindows()
+    }
+
+    func windowMoveDestinations(for selection: Result<WindowSelection, Error>) -> [DesktopSpace] {
+        if case let .success(window) = selection,
+           let source = spaces.first(where: { $0.managedID == window.sourceSpaceID }) {
+            return spaces.filter { $0.kind == .desktop && $0.displayID == source.displayID && $0.id != source.id }
+        }
+        // Keep the action discoverable without permission; selecting it explains
+        // what is needed, instead of silently presenting a disabled control.
+        return spaces.filter { $0.kind == .desktop && !$0.isCurrent }
+    }
+
+    func moveWindow(_ selection: Result<WindowSelection, Error>, to destination: DesktopSpace) async {
+        guard !isMovingWindow else { return }
+        isMovingWindow = true
+        defer { isMovingWindow = false }
+        do {
+            let window = try selection.get()
+            try await windowMover.move(window, to: destination)
+            reload()
+            guard let target = spaces.first(where: { $0.id == destination.id }) else { throw WindowMoveError.followFailed }
+            switch switcher.go(to: target) {
+            case .alreadyThere, .switching: break
+            case .needsPermission, .noShortcut: throw WindowMoveError.followFailed
+            }
+            // Focus only after arriving, so activating the app cannot pull the
+            // user back to a different window on the original desktop.
+            for _ in 0..<50 {
+                reload()
+                if spaces.contains(where: { $0.id == target.id && $0.isCurrent }) {
+                    try windowMover.focus(window)
+                    highlights.send(target.id)
+                    return
+                }
+                try await Task.sleep(for: .milliseconds(100))
+            }
+            throw WindowMoveError.followFailed
+        } catch is CancellationError {
+            return
+        } catch {
+            dialogs.showError(String(localized: "Could not move the window"), error)
+        }
     }
 
     // MARK: Naming

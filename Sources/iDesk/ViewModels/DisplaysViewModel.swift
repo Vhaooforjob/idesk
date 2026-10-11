@@ -96,7 +96,8 @@ final class DisplaysViewModel: ObservableObject {
     /// screen that just went dark.
     private func apply(_ layout: DisplayLayout) {
         let previous = service.currentLayout
-        guard layout != previous else { return }
+        // Even a no-op choice updates intent: choosing All Screens On while
+        // unplugged must cancel a pending external-only restoration.
         guard !layout.enabled.isEmpty else {
             return dialogs.showError(String(localized: "Could not change the screens"), DisplayError.noScreenLeft)
         }

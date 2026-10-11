@@ -337,6 +337,14 @@ private struct GeneralTab: View {
                 LabeledContent("Rename current desktop") {
                     TextField("⌃⌥R", text: $viewModel.settings.renameHotkey).frame(width: 120)
                 }
+                LabeledContent("Open window picker") {
+                    TextField("⌃⌥M", text: $viewModel.settings.moveWindowHotkey).frame(width: 120)
+                }
+                if !viewModel.settings.moveWindowHotkey.isEmpty,
+                   HotkeyService.parse(viewModel.settings.moveWindowHotkey) == nil {
+                    Text("Use modifiers and one key, for example ⌃⌥M.")
+                        .font(.caption).foregroundStyle(.red)
+                }
                 LabeledContent("Turn every screen back on") {
                     TextField("⌃⌥⌘D", text: $viewModel.settings.restoreDisplaysHotkey).frame(width: 120)
                 }

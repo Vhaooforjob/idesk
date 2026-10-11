@@ -4,7 +4,7 @@ import Foundation
 /// System-wide shortcuts through Carbon, as in iSnap's GlobalHotkeyService.
 @MainActor
 final class HotkeyService {
-    enum Action: UInt32 { case toggleLine = 1, renameCurrent = 2, restoreDisplays = 3 }
+    enum Action: UInt32 { case toggleLine = 1, renameCurrent = 2, restoreDisplays = 3, moveWindow = 4 }
 
     var onAction: ((Action) -> Void)?
 
@@ -65,24 +65,27 @@ final class HotkeyService {
 
     /// Reads shortcuts written like "⌃⌥D" or "ctrl+option+D".
     static func parse(_ value: String) -> (keyCode: UInt32, modifiers: UInt32)? {
+        let tokens = value
+            .replacingOccurrences(of: "⌘", with: " cmd ")
+            .replacingOccurrences(of: "⌃", with: " ctrl ")
+            .replacingOccurrences(of: "⌥", with: " option ")
+            .replacingOccurrences(of: "⇧", with: " shift ")
+            .components(separatedBy: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "+-")))
+            .filter { !$0.isEmpty }
         var modifiers: UInt32 = 0
-        let lower = value.lowercased()
-        if value.contains("⌘") || lower.contains("cmd") { modifiers |= UInt32(cmdKey) }
-        if value.contains("⌃") || lower.contains("ctrl") || lower.contains("control") { modifiers |= UInt32(controlKey) }
-        if value.contains("⌥") || lower.contains("option") || lower.contains("alt") { modifiers |= UInt32(optionKey) }
-        if value.contains("⇧") || lower.contains("shift") { modifiers |= UInt32(shiftKey) }
-        guard modifiers != 0 else { return nil }
-
-        let key = value
-            .replacingOccurrences(of: "⌘", with: " ")
-            .replacingOccurrences(of: "⌃", with: " ")
-            .replacingOccurrences(of: "⌥", with: " ")
-            .replacingOccurrences(of: "⇧", with: " ")
-            .components(separatedBy: CharacterSet(charactersIn: " +-"))
-            .filter { !$0.isEmpty && !["cmd", "ctrl", "control", "option", "alt", "shift"].contains($0.lowercased()) }
-            .last?
-            .uppercased()
-        guard let key, let keyCode = keyCodes[key] else { return nil }
+        var key: String?
+        for token in tokens {
+            switch token.lowercased() {
+            case "cmd", "command": modifiers |= UInt32(cmdKey)
+            case "ctrl", "control": modifiers |= UInt32(controlKey)
+            case "option", "alt": modifiers |= UInt32(optionKey)
+            case "shift": modifiers |= UInt32(shiftKey)
+            default:
+                guard key == nil else { return nil }
+                key = token.uppercased()
+            }
+        }
+        guard modifiers != 0, let key, let keyCode = keyCodes[key] else { return nil }
         return (keyCode, modifiers)
     }
 

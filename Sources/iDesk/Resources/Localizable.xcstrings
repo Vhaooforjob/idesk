@@ -41,6 +41,16 @@
         }
       }
     },
+    "Allow iDesk in System Settings → Privacy & Security → Accessibility to move windows.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cho phép iDesk trong Cài đặt hệ thống → Quyền riêng tư & Bảo mật → Trợ năng để chuyển cửa sổ."
+          }
+        }
+      }
+    },
     "Allow iDesk to switch desktops": {
       "localizations": {
         "vi": {
@@ -67,6 +77,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Luôn hiện"
+          }
+        }
+      }
+    },
+    "Appearance": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giao diện"
+          }
+        }
+      }
+    },
+    "Application": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ứng dụng"
           }
         }
       }
@@ -151,6 +181,46 @@
         }
       }
     },
+    "Choose a window with another desktop on the same display.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn cửa sổ có desktop khác trên cùng màn hình."
+          }
+        }
+      }
+    },
+    "Choose a window, then its destination desktop.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn cửa sổ, rồi chọn desktop đích."
+          }
+        }
+      }
+    },
+    "Choose another desktop on the same display as the selected window.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn desktop khác trên cùng màn hình với cửa sổ đã chọn."
+          }
+        }
+      }
+    },
+    "Click to switch desktops. Shift-click to move the focused window here and follow it.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bấm để đổi desktop. Giữ Shift rồi bấm để chuyển cửa sổ đang dùng đến đây và đi theo."
+          }
+        }
+      }
+    },
     "Clothesline": {
       "localizations": {
         "vi": {
@@ -197,6 +267,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Không thể xoá desktop"
+          }
+        }
+      }
+    },
+    "Could not move the window": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể chuyển cửa sổ"
           }
         }
       }
@@ -271,6 +351,16 @@
         }
       }
     },
+    "Desktop Actions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quản lý desktop"
+          }
+        }
+      }
+    },
     "Desktop Line": {
       "localizations": {
         "vi": {
@@ -297,6 +387,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Desktop"
+          }
+        }
+      }
+    },
+    "Destination Desktop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desktop đích"
           }
         }
       }
@@ -347,6 +447,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đèn nháy"
+          }
+        }
+      }
+    },
+    "Finding windows…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tìm cửa sổ…"
           }
         }
       }
@@ -641,6 +751,66 @@
         }
       }
     },
+    "Move Window Here and Follow": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển cửa sổ đến đây và đi theo"
+          }
+        }
+      }
+    },
+    "Move Window to Desktop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển cửa sổ sang desktop"
+          }
+        }
+      }
+    },
+    "Move a Window": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển cửa sổ"
+          }
+        }
+      }
+    },
+    "Move a Window…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển cửa sổ…"
+          }
+        }
+      }
+    },
+    "Move and Follow": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển và đi theo"
+          }
+        }
+      }
+    },
+    "Moving windows is not available on this version of macOS.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tính năng chuyển cửa sổ không khả dụng trên phiên bản macOS này."
+          }
+        }
+      }
+    },
     "Name Banner": {
       "localizations": {
         "vi": {
@@ -697,6 +867,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chưa có desktop"
+          }
+        }
+      }
+    },
+    "No matching windows.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có cửa sổ phù hợp."
+          }
+        }
+      }
+    },
+    "No movable windows on the current desktops. Open a regular application window, then refresh.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có cửa sổ có thể chuyển trên các desktop hiện tại. Mở một cửa sổ ứng dụng thông thường rồi làm mới."
           }
         }
       }
@@ -761,6 +951,16 @@
         }
       }
     },
+    "Open Accessibility Settings": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở cài đặt Trợ năng"
+          }
+        }
+      }
+    },
     "Open Keyboard Settings": {
       "localizations": {
         "vi": {
@@ -797,6 +997,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mở iDesk khi đăng nhập"
+          }
+        }
+      }
+    },
+    "Open window picker": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở bảng chọn cửa sổ"
           }
         }
       }
@@ -881,6 +1091,16 @@
         }
       }
     },
+    "Refresh windows": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Làm mới danh sách cửa sổ"
+          }
+        }
+      }
+    },
     "Rename": {
       "localizations": {
         "vi": {
@@ -951,6 +1171,16 @@
         }
       }
     },
+    "Return to move · Esc to close": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return để chuyển · Esc để đóng"
+          }
+        }
+      }
+    },
     "Screen Recording": {
       "localizations": {
         "vi": {
@@ -967,6 +1197,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Màn hình"
+          }
+        }
+      }
+    },
+    "Search windows or apps": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm cửa sổ hoặc ứng dụng"
+          }
+        }
+      }
+    },
+    "Select an application window first, then try again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn một cửa sổ ứng dụng trước, rồi thử lại."
           }
         }
       }
@@ -1181,12 +1431,42 @@
         }
       }
     },
+    "The selected window was closed or moved. Select it again and retry.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cửa sổ đã chọn đã đóng hoặc chuyển đi. Chọn lại cửa sổ rồi thử lại."
+          }
+        }
+      }
+    },
+    "The window moved, but iDesk could not switch to its desktop. Open that desktop from Mission Control.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cửa sổ đã được chuyển nhưng iDesk không thể đi theo sang desktop đó. Mở desktop đó từ Mission Control."
+          }
+        }
+      }
+    },
     "This version of macOS does not let iDesk turn screens off.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Phiên bản macOS này không cho iDesk tắt màn hình."
+          }
+        }
+      }
+    },
+    "Try Again": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thử lại"
           }
         }
       }
@@ -1251,6 +1531,16 @@
         }
       }
     },
+    "Untitled Window": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cửa sổ chưa có tiêu đề"
+          }
+        }
+      }
+    },
     "Use Default Name": {
       "localizations": {
         "vi": {
@@ -1261,12 +1551,42 @@
         }
       }
     },
+    "Use a regular window on one desktop. Exit full screen or Split View, and unpin windows assigned to all desktops.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dùng cửa sổ thông thường trên một desktop. Thoát toàn màn hình hoặc Split View và bỏ ghim cửa sổ trên tất cả desktop."
+          }
+        }
+      }
+    },
+    "Use modifiers and one key, for example ⌃⌥M.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dùng phím bổ trợ và một phím, ví dụ ⌃⌥M."
+          }
+        }
+      }
+    },
     "Which screens are on": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Màn hình nào đang bật"
+          }
+        }
+      }
+    },
+    "Window": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cửa sổ"
           }
         }
       }
@@ -1307,6 +1627,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "iDesk chuyển desktop bằng “Di chuyển sang trái một không gian”, “Di chuyển sang phải một không gian” hoặc “Chuyển sang Desktop N”. Hãy bật chúng trong Cài đặt hệ thống → Bàn phím → Phím tắt → Mission Control."
+          }
+        }
+      }
+    },
+    "macOS did not move the window. You can move it manually in Mission Control.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS chưa chuyển cửa sổ. Bạn có thể chuyển thủ công trong Mission Control."
           }
         }
       }

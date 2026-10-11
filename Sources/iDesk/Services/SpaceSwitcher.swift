@@ -73,7 +73,13 @@ enum SymbolicHotkeys {
 /// when it is on; otherwise iDesk walks with ⌃← / ⌃→ and checks after
 /// each Space change until it arrives.
 @MainActor
-final class SpaceSwitcher {
+protocol SpaceSwitching: AnyObject {
+    func go(to space: DesktopSpace) -> SpaceSwitcher.Outcome
+    func spaceDidChange()
+}
+
+@MainActor
+final class SpaceSwitcher: SpaceSwitching {
     enum Outcome { case switching, alreadyThere, needsPermission, noShortcut }
 
     private let spaces: SpaceService

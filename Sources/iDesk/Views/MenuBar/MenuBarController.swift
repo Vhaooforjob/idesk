@@ -7,12 +7,14 @@ import Combine
 final class MenuBarController: NSObject, NSMenuDelegate {
     private let viewModel: MenuBarViewModel
     private let openSettings: () -> Void
+    private let openWindowPicker: () -> Void
     private let statusItem: NSStatusItem
     private var cancellables: Set<AnyCancellable> = []
 
-    init(viewModel: MenuBarViewModel, openSettings: @escaping () -> Void) {
+    init(viewModel: MenuBarViewModel, openSettings: @escaping () -> Void, openWindowPicker: @escaping () -> Void) {
         self.viewModel = viewModel
         self.openSettings = openSettings
+        self.openWindowPicker = openWindowPicker
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         super.init()
 
@@ -58,12 +60,35 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         }
 
         menu.addItem(.separator())
-        let rename = LineMenuItem(String(localized: "Rename Current Desktop…")) { [weak self] in self?.viewModel.renameCurrent() }
-        rename.showShortcut(viewModel.renameShortcut)
-        menu.addItem(rename)
+        let picker = LineMenuItem(String(localized: "Move a Window…")) { [weak self] in self?.openWindowPicker() }
+        picker.showShortcut(viewModel.moveWindowShortcut)
+        menu.addItem(picker)
         let toggle = LineMenuItem(String(localized: "Show or Hide the Line")) { [weak self] in self?.viewModel.toggleLine() }
         toggle.showShortcut(viewModel.toggleShortcut)
         menu.addItem(toggle)
+
+        menu.addItem(.separator())
+        menu.addItem(desktopActionsMenu())
+        menu.addItem(appearanceMenu())
+        if let screens = viewModel.screenGroups { menu.addItem(screensMenu(screens)) }
+        if viewModel.needsSwitchingPermission {
+            menu.addItem(LineMenuItem(String(localized: "Allow Switching Desktops…")) { [weak self] in self?.viewModel.allowSwitching() })
+        }
+
+        menu.addItem(.separator())
+        menu.addItem(LineMenuItem(String(localized: "Settings…"), key: ",") { [weak self] in self?.openSettings() })
+        menu.addItem(LineMenuItem(String(localized: "Quit iDesk"), key: "q") { NSApp.terminate(nil) })
+    }
+
+    private func desktopActionsMenu() -> NSMenuItem {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        let rename = LineMenuItem(String(localized: "Rename Current Desktop…")) { [weak self] in self?.viewModel.renameCurrent() }
+        rename.showShortcut(viewModel.renameShortcut)
+        menu.addItem(rename)
+        let moveGroup = viewModel.moveWindowGroup
+        if !moveGroup.choices.isEmpty { menu.addItem(submenu(for: moveGroup)) }
+        menu.addItem(.separator())
         menu.addItem(LineMenuItem(String(localized: "Add Desktop")) { [weak self] in self?.viewModel.addDesktop() })
         let deletable = viewModel.deletableDesktops
         let deleteMenu = NSMenu()
@@ -75,23 +100,21 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         deleteItem.submenu = deleteMenu
         deleteItem.isEnabled = !deletable.isEmpty
         menu.addItem(deleteItem)
-        if viewModel.needsSwitchingPermission {
-            menu.addItem(LineMenuItem(String(localized: "Allow Switching Desktops…")) { [weak self] in self?.viewModel.allowSwitching() })
-        }
+        return groupItem(String(localized: "Desktop Actions"), menu: menu)
+    }
 
-        if let screens = viewModel.screenGroups {
-            menu.addItem(.separator())
-            menu.addItem(screensMenu(screens))
-        }
-
-        menu.addItem(.separator())
+    private func appearanceMenu() -> NSMenuItem {
+        let menu = NSMenu()
         for group in viewModel.choiceGroups { menu.addItem(submenu(for: group)) }
-
         menu.addItem(.separator())
-        menu.addItem(LineMenuItem(String(localized: "Settings…"), key: ",") { [weak self] in self?.openSettings() })
         menu.addItem(submenu(for: viewModel.languageGroup))
-        menu.addItem(.separator())
-        menu.addItem(LineMenuItem(String(localized: "Quit iDesk"), key: "q") { NSApp.terminate(nil) })
+        return groupItem(String(localized: "Appearance"), menu: menu)
+    }
+
+    private func groupItem(_ title: String, menu: NSMenu) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        item.submenu = menu
+        return item
     }
 
     /// What the screens show, each screen on or off, and the way back.
@@ -125,9 +148,11 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     /// A submenu of mutually exclusive options with the current one ticked.
     private func submenu(for group: MenuBarViewModel.ChoiceGroup) -> NSMenuItem {
         let submenu = NSMenu()
+        submenu.autoenablesItems = false
         for choice in group.choices {
             let item = LineMenuItem(choice.title, handler: choice.select)
             item.state = choice.isSelected ? .on : .off
+            item.isEnabled = choice.isEnabled
             if let symbol = choice.symbol { item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) }
             submenu.addItem(item)
         }
