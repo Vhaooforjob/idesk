@@ -24,7 +24,11 @@ final class DesktopLineViewModel: ObservableObject {
 
     /// Card frames in panel coordinates, reported by the views. The panel
     /// only catches clicks over cards and lets the rest through.
-    var hitRects: [String: CGRect] = [:]
+    var hitRects: [String: CGRect] = [:] {
+        didSet { if hitRects != oldValue { onHitRectsChange?() } }
+    }
+    var onHitRectsChange: (() -> Void)?
+    @Published private(set) var isRenderingEnabled = true
 
     /// The Settings preview: always down, sample desktops, and clicks only
     /// play the effect.
@@ -61,8 +65,9 @@ final class DesktopLineViewModel: ObservableObject {
                 self?.spaceChanges.send()
             }
             .store(in: &cancellables)
-        scheduleGust()
     }
+
+    deinit { gustTimer?.invalidate() }
 
     /// A line of sample desktops that follows the look in the settings.
     init(preview items: [HangingDesktop], settings: AnyPublisher<AppSettings, Never>) {
@@ -78,6 +83,7 @@ final class DesktopLineViewModel: ObservableObject {
         let newLook = LineLook(settings)
         if newLook != look { look = newLook }
         if settings.visibility != visibility { visibility = settings.visibility }
+        scheduleGust()
     }
 
     // MARK: Intents from the cards
@@ -156,6 +162,13 @@ final class DesktopLineViewModel: ObservableObject {
     func setRevealed(_ revealed: Bool) {
         guard revealed != isRevealed else { return }
         isRevealed = revealed
+        scheduleGust()
+    }
+
+    func setRenderingEnabled(_ enabled: Bool) {
+        guard enabled != isRenderingEnabled else { return }
+        isRenderingEnabled = enabled
+        scheduleGust()
     }
 
     func isFullScreen(_ screen: NSScreen) -> Bool {
@@ -173,6 +186,8 @@ final class DesktopLineViewModel: ObservableObject {
     /// Windy days have gusts: every few seconds the whole line swings.
     private func scheduleGust() {
         gustTimer?.invalidate()
+        gustTimer = nil
+        guard !isPreview, isRevealed, isRenderingEnabled, look.sway == .windy else { return }
         let timer = Timer(timeInterval: .random(in: 3.5...7), repeats: false) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
@@ -180,6 +195,7 @@ final class DesktopLineViewModel: ObservableObject {
                 self.scheduleGust()
             }
         }
+        timer.tolerance = 0.5
         RunLoop.main.add(timer, forMode: .common)
         gustTimer = timer
     }

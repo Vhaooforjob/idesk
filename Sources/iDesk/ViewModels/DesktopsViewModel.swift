@@ -22,7 +22,8 @@ final class DesktopsViewModel {
     private let desktopManager: DesktopManaging
     private let dialogs: DialogPresenting
     private var lastCurrent: [String: String] = [:]
-    private var previewTimer: Timer?
+    private var previewWork: DispatchWorkItem?
+    private var pendingPreviewSpaces: Set<String> = []
 
     /// How long to wait after a switch before taking the new desktop's
     /// picture, so the slide has finished.
@@ -45,15 +46,8 @@ final class DesktopsViewModel {
         spaceService.start()
         rememberCurrent()
 
-        // A desktop you stay on keeps its picture fresh.
-        let timer = Timer(timeInterval: 20, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated {
-                guard let screen = SpaceService.screenUnderPointer else { return }
-                self?.refreshPreview(on: screen)
-            }
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        previewTimer = timer
+        // Capture on arrival and when opening the line; idle desktops do not
+        // need recurring screenshots or JPEG writes.
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
             for screen in NSScreen.screens { self?.refreshPreview(on: screen) }
         }
@@ -153,11 +147,20 @@ final class DesktopsViewModel {
         arrivals.send(space)
         highlights.send(space.id)
         if settings.playsSounds { NSSound(named: "Pop")?.play() }
-        if let screen = Self.screen(for: space.displayID) ?? SpaceService.screenUnderPointer {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Self.settleDelay) { [weak self] in
-                self?.refreshPreview(on: screen)
+        previewWork?.cancel()
+        pendingPreviewSpaces.formUnion(arrived.map(\.id))
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            let pending = self.pendingPreviewSpaces
+            self.pendingPreviewSpaces.removeAll()
+            for screen in NSScreen.screens {
+                if let current = self.currentSpace(on: screen), pending.contains(current.id) {
+                    self.refreshPreview(on: screen)
+                }
             }
         }
+        previewWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.settleDelay, execute: work)
     }
 
     private func rememberCurrent() {
@@ -283,7 +286,7 @@ final class DesktopsViewModel {
     func refreshPreview(on screen: NSScreen) {
         guard settings.showsPreviews, let space = currentSpace(on: screen) else { return }
         thumbnailStore.capture(space, on: screen) { [weak self] in
-            guard let self else { return false }
+            guard let self, self.settings.showsPreviews else { return false }
             self.reload()
             return self.currentSpace(on: screen)?.id == space.id
         }

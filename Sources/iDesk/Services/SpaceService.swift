@@ -31,6 +31,7 @@ final class SpaceService: ObservableObject {
     }
 
     func start() {
+        guard observer == nil else { return }
         reload()
         observer = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.activeSpaceDidChangeNotification, object: nil, queue: .main
@@ -43,8 +44,14 @@ final class SpaceService: ObservableObject {
         let timer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.reload() }
         }
+        timer.tolerance = 0.5
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
+    }
+
+    deinit {
+        timer?.invalidate()
+        if let observer { NSWorkspace.shared.notificationCenter.removeObserver(observer) }
     }
 
     func reload() {

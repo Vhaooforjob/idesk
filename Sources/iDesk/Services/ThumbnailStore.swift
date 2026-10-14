@@ -16,50 +16,73 @@ final class ThumbnailStore: ObservableObject {
 
     static let width = 480
     private let folder: URL
-    private var isCapturing = false
+    private struct CaptureKey: Hashable {
+        let spaceID: String
+        let displayID: CGDirectDisplayID
+    }
+    private var capturingDisplays: Set<CGDirectDisplayID> = []
+    private var capturedAt: [CaptureKey: Date] = [:]
+    private let captureImage: (CGDirectDisplayID) async throws -> CGImage?
+    private let canCapture: () -> Bool
+    private let now: () -> Date
+    private static let minimumCaptureInterval: TimeInterval = 5
 
     nonisolated static var defaultFolder: URL {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("dev.idesk.app/Thumbnails", isDirectory: true)
     }
 
-    init(folder: URL = ThumbnailStore.defaultFolder) {
+    init(folder: URL = ThumbnailStore.defaultFolder,
+         canCapture: @escaping () -> Bool = { PermissionService.canCapturePreviews },
+         now: @escaping () -> Date = Date.init,
+         captureImage: @escaping (CGDirectDisplayID) async throws -> CGImage? = { try await ThumbnailStore.screenshot(on: $0) }) {
         self.folder = folder
+        self.canCapture = canCapture
+        self.now = now
+        self.captureImage = captureImage
         loadSaved()
     }
 
     /// Photographs the screen as it is now. `stillThere` is asked once the
     /// picture is ready, so a picture taken during a switch is dropped.
     func capture(_ space: DesktopSpace, on screen: NSScreen, stillThere: @escaping () -> Bool) {
-        guard !isCapturing else { return }
-        guard PermissionService.canCapturePreviews else {
+        let displayID = screen.displayID
+        let key = CaptureKey(spaceID: space.id, displayID: displayID)
+        guard !capturingDisplays.contains(displayID),
+              capturedAt[key].map({ now().timeIntervalSince($0) >= Self.minimumCaptureInterval }) ?? true else { return }
+        guard canCapture() else {
             if images[space.id] == nil { useWallpaper(for: space, on: screen) }
             return
         }
-        isCapturing = true
-        let displayID = screen.displayID
+        capturingDisplays.insert(displayID)
         Task { [weak self] in
-            defer { self?.isCapturing = false }
+            guard let self else { return }
+            defer { self.capturingDisplays.remove(displayID) }
             do {
-                let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
-                guard let display = content.displays.first(where: { $0.displayID == displayID }) else { return }
-                // The line and the banner are iDesk's own windows; leave them out.
-                let ours = content.applications.filter { $0.processID == ProcessInfo.processInfo.processIdentifier }
-                let filter = SCContentFilter(display: display, excludingApplications: ours, exceptingWindows: [])
-                let configuration = SCStreamConfiguration()
-                configuration.width = Self.width
-                configuration.height = max(1, Self.width * display.height / max(1, display.width))
-                configuration.showsCursor = false
-                let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
-                guard let self, stillThere() else { return }
+                guard stillThere(), let image = try await self.captureImage(displayID), stillThere() else { return }
                 self.store(image, for: space.id)
+                self.capturedAt[key] = self.now()
             } catch {
                 log.error("Capture failed: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
 
+    private static func screenshot(on displayID: CGDirectDisplayID) async throws -> CGImage? {
+        let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+        guard let display = content.displays.first(where: { $0.displayID == displayID }) else { return nil }
+        // The line and the banner are iDesk's own windows; leave them out.
+        let ours = content.applications.filter { $0.processID == ProcessInfo.processInfo.processIdentifier }
+        let filter = SCContentFilter(display: display, excludingApplications: ours, exceptingWindows: [])
+        let configuration = SCStreamConfiguration()
+        configuration.width = Self.width
+        configuration.height = max(1, Self.width * display.height / max(1, display.width))
+        configuration.showsCursor = false
+        return try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
+    }
+
     func forget(keeping ids: Set<String>) {
+        capturedAt = capturedAt.filter { ids.contains($0.key.spaceID) }
         for id in images.keys where !ids.contains(id) {
             images[id] = nil
             try? FileManager.default.removeItem(at: url(for: id))

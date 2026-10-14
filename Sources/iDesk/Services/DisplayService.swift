@@ -67,6 +67,7 @@ final class DisplayService: DisplayControlling, ObservableObject {
     private var changing = false
     private var observer: NSObjectProtocol?
     private var timer: Timer?
+    private let observeChanges: Bool
 
     convenience init() {
         self.init(system: CoreGraphicsDisplaySystem())
@@ -74,6 +75,7 @@ final class DisplayService: DisplayControlling, ObservableObject {
 
     init(system: DisplaySystem, observeChanges: Bool = true) {
         self.system = system
+        self.observeChanges = observeChanges
         reload()
         guard observeChanges else { return }
         observer = NotificationCenter.default.addObserver(
@@ -82,14 +84,21 @@ final class DisplayService: DisplayControlling, ObservableObject {
             // Never reconfigure inside a system notification/configuration call.
             DispatchQueue.main.async { self?.refresh() }
         }
-        // A notification can be missed when every screen disappears. This also
-        // retries recovery while a dock or the window server is still settling.
-        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated {
-                guard let self, self.preferredExternal != nil || !self.turnedOff.isEmpty else { return }
-                self.refresh()
-            }
+    }
+
+    /// Keep the recovery watchdog only while iDesk has a screen preference
+    /// to recover. Normal all-screen use needs no periodic wakeups.
+    private func updateRecoveryTimer() {
+        guard observeChanges, preferredExternal != nil || !turnedOff.isEmpty else {
+            timer?.invalidate()
+            timer = nil
+            return
         }
+        guard timer == nil else { return }
+        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refresh() }
+        }
+        timer.tolerance = 0.2
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
     }
@@ -109,7 +118,7 @@ final class DisplayService: DisplayControlling, ObservableObject {
     func refresh() {
         guard !changing else { return }
         changing = true
-        defer { reload(); changing = false }
+        defer { reload(); changing = false; updateRecoveryTimer() }
         reload()
         do {
             if let preferredExternal {
@@ -140,7 +149,7 @@ final class DisplayService: DisplayControlling, ObservableObject {
     func apply(_ layout: DisplayLayout) throws {
         guard !layout.enabled.isEmpty else { throw DisplayError.noScreenLeft }
         changing = true
-        defer { reload(); changing = false }
+        defer { reload(); changing = false; updateRecoveryTimer() }
         reload()
         let primary = DisplayArrangement.primary(of: displays, menuBarDisplay: menuBarDisplay)
         let external = layout.enabled.count == 1
@@ -156,7 +165,7 @@ final class DisplayService: DisplayControlling, ObservableObject {
         // the fallback screen is already the only connected screen.
         preferredExternal = nil
         changing = true
-        defer { reload(); changing = false }
+        defer { reload(); changing = false; updateRecoveryTimer() }
         reload()
         try restoreAvailable()
     }

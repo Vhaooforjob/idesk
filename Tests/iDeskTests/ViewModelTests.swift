@@ -236,6 +236,97 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(preview.celebration.id, "sample-2")
     }
 
+    // MARK: Preview capture scheduling
+
+    private func thumbnailImage() throws -> CGImage {
+        let context = try XCTUnwrap(CGContext(data: nil, width: 8, height: 8, bitsPerComponent: 8,
+                                              bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+                                              bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        return try XCTUnwrap(context.makeImage())
+    }
+
+    func testPreviewCoalescesRequestsAndRefreshesAfterCooldown() async throws {
+        let screen = try anyScreen()
+        let image = try thumbnailImage()
+        var now = Date(timeIntervalSinceReferenceDate: 100)
+        var captures = 0
+        let store = ThumbnailStore(folder: folder.appendingPathComponent("Thumbnails"),
+                                   canCapture: { true }, now: { now }, captureImage: { _ in
+            captures += 1
+            return image
+        })
+        let first = expectation(description: "First preview")
+        store.$images.dropFirst().prefix(1).sink { _ in first.fulfill() }.store(in: &cancellables)
+        let desktop = Self.space(1, current: true)
+        store.capture(desktop, on: screen, stillThere: { true })
+        store.capture(desktop, on: screen, stillThere: { true })
+        await fulfillment(of: [first], timeout: 2)
+        XCTAssertEqual(captures, 1)
+
+        store.capture(desktop, on: screen, stillThere: { true })
+        // A different desktop must not be blocked by the first one's cooldown.
+        let other = expectation(description: "Other desktop")
+        store.$images.dropFirst().prefix(1).sink { _ in other.fulfill() }.store(in: &cancellables)
+        store.capture(Self.space(2), on: screen, stillThere: { true })
+        await fulfillment(of: [other], timeout: 2)
+        XCTAssertEqual(captures, 2)
+        XCTAssertNotNil(store.images["S2"])
+
+        now.addTimeInterval(5)
+        let refreshed = expectation(description: "Fresh preview after cooldown")
+        store.$images.dropFirst().prefix(1).sink { _ in refreshed.fulfill() }.store(in: &cancellables)
+        store.capture(desktop, on: screen, stillThere: { true })
+        await fulfillment(of: [refreshed], timeout: 2)
+        XCTAssertEqual(captures, 3)
+    }
+
+    func testPreviewDropsStaleCaptureAndAllowsImmediateRetry() async throws {
+        let screen = try anyScreen()
+        let image = try thumbnailImage()
+        var checks = 0
+        var captures = 0
+        let dropped = expectation(description: "Space changed during capture")
+        let store = ThumbnailStore(folder: folder.appendingPathComponent("Thumbnails"),
+                                   canCapture: { true }, captureImage: { _ in
+            captures += 1
+            return image
+        })
+        let desktop = Self.space(1, current: true)
+        store.capture(desktop, on: screen) {
+            checks += 1
+            if checks == 2 { dropped.fulfill(); return false }
+            return true
+        }
+        await fulfillment(of: [dropped], timeout: 2)
+        XCTAssertNil(store.images[desktop.id])
+
+        let saved = expectation(description: "Retry succeeds without cooldown")
+        store.$images.dropFirst().prefix(1).sink { _ in saved.fulfill() }.store(in: &cancellables)
+        store.capture(desktop, on: screen, stillThere: { true })
+        await fulfillment(of: [saved], timeout: 2)
+        XCTAssertEqual(captures, 2)
+        XCTAssertNotNil(store.images[desktop.id])
+    }
+
+    func testStartupCapturesBothDisplaysWithoutDroppingTheSecond() async throws {
+        guard NSScreen.screens.count >= 2 else { throw XCTSkip("Needs two displays") }
+        let image = try thumbnailImage()
+        var capturedDisplays: Set<CGDirectDisplayID> = []
+        let store = ThumbnailStore(folder: folder.appendingPathComponent("Thumbnails"),
+                                   canCapture: { true }, captureImage: { id in
+            capturedDisplays.insert(id)
+            return image
+        })
+        let saved = expectation(description: "Both previews")
+        store.$images.filter { $0.count == 2 }.prefix(1)
+            .sink { _ in saved.fulfill() }.store(in: &cancellables)
+        for (index, screen) in NSScreen.screens.prefix(2).enumerated() {
+            store.capture(Self.space(index + 1), on: screen, stillThere: { true })
+        }
+        await fulfillment(of: [saved], timeout: 2)
+        XCTAssertEqual(capturedDisplays.count, 2)
+    }
+
     // MARK: NameBannerViewModel
 
     func testBannerShowsTheNameOfTheDesktopArrivedOn() {

@@ -12,7 +12,9 @@ import SwiftUI
 final class DesktopLineWindowController {
     private let viewModel: DesktopLineViewModel
     private let panel: DesktopLinePanel
-    private var mouseTimer: Timer?
+    private var dwellTimer: Timer?
+    private var pointerMonitors: [Any] = []
+    private var pointerUpdate: DispatchWorkItem?
     private var clickMonitors: [Any] = []
     private var observers: [NSObjectProtocol] = []
     private var cancellables: Set<AnyCancellable> = []
@@ -52,26 +54,51 @@ final class DesktopLineWindowController {
             .sink { [weak self] in self?.toggle() }
             .store(in: &cancellables)
         viewModel.spaceChanges
-            .sink { [weak self] in self?.refreshPresence() }
+            .sink { [weak self] in
+                self?.refreshPresence()
+                self?.tick()
+            }
             .store(in: &cancellables)
         observers.append(NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.panel.place(on: self?.panel.screen) }
+            MainActor.assumeIsolated {
+                self?.panel.place(on: self?.panel.screen)
+                self?.refreshPresence()
+                self?.tick()
+            }
         })
         watchClicks()
-        let timer = Timer(timeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.tick() }
+        watchPointer()
+        viewModel.onHitRectsChange = { [weak self] in
+            guard let self, self.viewModel.isRevealed else { return }
+            self.updateMousePassThrough(NSEvent.mouseLocation)
         }
-        RunLoop.main.add(timer, forMode: .common)
-        mouseTimer = timer
+        observers.append(NotificationCenter.default.addObserver(
+            forName: NSMenu.didEndTrackingNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            // Let the card's menu handler finish clearing its busy flag first.
+            DispatchQueue.main.async { self?.tick() }
+        })
         refreshPresence()
+        tick()
+    }
+
+    deinit {
+        dwellTimer?.invalidate()
+        pointerUpdate?.cancel()
+        for monitor in pointerMonitors + clickMonitors { NSEvent.removeMonitor(monitor) }
+        for observer in observers { NotificationCenter.default.removeObserver(observer) }
     }
 
     private func visibilityChanged(to visibility: LineVisibility) {
         hiddenByUser = false
         isPinned = false
+        hotZoneSince = nil
+        awaySince = nil
         if visibility != .always { setRevealed(false) }
+        // @Published sends before visibility has been stored.
+        DispatchQueue.main.async { [weak self] in self?.tick() }
     }
 
     /// The shortcut or the menu: down if up, up if down.
@@ -117,6 +144,10 @@ final class DesktopLineWindowController {
 
     private func setRevealed(_ revealed: Bool) {
         viewModel.setRevealed(revealed)
+        hotZoneSince = nil
+        awaySince = nil
+        dwellTimer?.invalidate()
+        dwellTimer = nil
         if !revealed {
             isPinned = false
             panel.ignoresMouseEvents = true
@@ -137,6 +168,7 @@ final class DesktopLineWindowController {
     private func watchClicks() {
         let handler: () -> Void = { [weak self] in
             guard let self else { return }
+            defer { self.tick() }
             let point = NSEvent.mouseLocation
             let inMenuBar = NSScreen.screens.contains { NSMouseInRect(point, Self.menuBarBand(of: $0), false) }
             guard self.visibility != .always else { return }
@@ -160,7 +192,52 @@ final class DesktopLineWindowController {
         }
     }
 
+    /// Mouse movement drives hit testing; a one-shot timer only runs while
+    /// waiting to reveal/retract. A stationary pointer causes no polling.
+    private func watchPointer() {
+        let events: NSEvent.EventTypeMask = [.mouseMoved, .leftMouseDragged, .rightMouseDragged,
+                                             .otherMouseDragged, .leftMouseUp, .rightMouseUp]
+        if let global = NSEvent.addGlobalMonitorForEvents(matching: events, handler: { [weak self] _ in
+            MainActor.assumeIsolated { self?.schedulePointerUpdate() }
+        }) { pointerMonitors.append(global) }
+        if let local = NSEvent.addLocalMonitorForEvents(matching: events, handler: { [weak self] event in
+            MainActor.assumeIsolated { self?.schedulePointerUpdate() }
+            return event
+        }) { pointerMonitors.append(local) }
+    }
+
+    private func schedulePointerUpdate() {
+        // Coalesce high-frequency mouse/trackpad events; no work is scheduled
+        // after the last event. Deferring also lets mouse-up handlers finish.
+        guard pointerUpdate == nil else { return }
+        let work = DispatchWorkItem { [weak self] in
+            self?.pointerUpdate = nil
+            self?.tick()
+        }
+        pointerUpdate = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0 / 60.0, execute: work)
+    }
+
+    private func scheduleDwellCheck() {
+        let deadline = hotZoneSince.map { $0.addingTimeInterval(Self.revealDelay) }
+            ?? awaySince.map { $0.addingTimeInterval(Self.retractDelay) }
+        guard let deadline else {
+            dwellTimer?.invalidate()
+            dwellTimer = nil
+            return
+        }
+        // Mouse events must not keep postponing an existing dwell deadline.
+        guard dwellTimer?.fireDate != deadline else { return }
+        dwellTimer?.invalidate()
+        let timer = Timer(fire: deadline, interval: 0, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated { self?.tick() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        dwellTimer = timer
+    }
+
     private func tick() {
+        defer { scheduleDwellCheck() }
         let mouse = NSEvent.mouseLocation
         let now = Date()
         let screenUnderPointer = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) }
@@ -245,6 +322,7 @@ private final class DesktopLinePanel: NSPanel {
         isMovable = false
         becomesKeyOnlyIfNeeded = true
         ignoresMouseEvents = true
+        acceptsMouseMovedEvents = true
         contentView = content
     }
 

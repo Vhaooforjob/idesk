@@ -202,6 +202,21 @@ private final class FakeDisplaySystem: DisplaySystem {
 
 @MainActor
 final class DisplayServiceTests: XCTestCase {
+    func testWatchdogRecoversAnUnplugWithoutASystemNotification() async throws {
+        let system = FakeDisplaySystem()
+        let service = DisplayService(system: system)
+        try service.apply(DisplayLayout(enabled: [3]))
+        system.connected.removeAll { $0.id == 3 }
+        let recovered = expectation(description: "Watchdog lights the built-in display")
+        system.afterChange = {
+            if system.lit == [1] { recovered.fulfill() }
+        }
+        await fulfillment(of: [recovered], timeout: 3)
+        system.afterChange = nil
+        XCTAssertEqual(system.lit, [1])
+        try service.recoverAll()
+    }
+
     func testUnplugFallsBackAndReconnectRestoresExternalOnlyRepeatedly() throws {
         let system = FakeDisplaySystem()
         let service = DisplayService(system: system, observeChanges: false)

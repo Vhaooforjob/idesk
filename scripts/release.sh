@@ -22,6 +22,12 @@ xcodebuild -project "$APP.xcodeproj" -scheme "$APP" -configuration Release \
 
 mkdir -p "$OUT" "$STAGE"
 ditto "$DERIVED/Build/Products/Release/$APP.app" "$STAGE/$APP.app"
+# Keep source provenance and license notices in every distributed app.
+/usr/libexec/PlistBuddy -c "Add :iDeskSourceCommit string $(git rev-parse HEAD)" "$STAGE/$APP.app/Contents/Info.plist"
+cp LICENSE "$STAGE/$APP.app/Contents/Resources/LICENSE.txt"
+sed -n '/^\/\/ Copyright (c) 2026 Alejandro Buján/,/^\/\/ USE OR OTHER DEALINGS IN THE SOFTWARE\./p' \
+  Sources/iDesk/Views/Line/DesktopLineView.swift | sed 's@^// *@@' \
+  > "$STAGE/$APP.app/Contents/Resources/THIRD-PARTY-NOTICES.txt"
 # Ad-hoc sign inside-out: app extensions first, then the app, each with its own entitlements.
 for appex in "$STAGE/$APP.app"/Contents/PlugIns/*.appex; do
   [ -e "$appex" ] || continue
@@ -37,4 +43,5 @@ ditto -c -k --keepParent "$STAGE/$APP.app" "$OUT/$NAME.zip"
 
 ln -s /Applications "$STAGE/Applications"
 hdiutil create -volname "$APP $VERSION" -srcfolder "$STAGE" -ov -format UDZO "$OUT/$NAME.dmg" >/dev/null
-(cd "$OUT" && shasum -a 256 "$NAME.dmg" "$NAME.zip")
+(cd "$OUT" && shasum -a 256 "$NAME.dmg" "$NAME.zip" > "$APP-$VERSION-SHA256SUMS.txt")
+cat "$OUT/$APP-$VERSION-SHA256SUMS.txt"

@@ -2,7 +2,7 @@
 
 <h1 align="center">iDesk</h1>
 
-<p align="center"><b>Name your Mac desktops and hang them under the menu bar.</b><br>Every desktop (Space) hangs on a line with a live preview and its own name. Click one to go there.</p>
+<p align="center"><b>Name your Mac desktops and hang them under the menu bar.</b><br>Every desktop (Space) hangs on a line with a desktop preview and its own name. Click one to go there.</p>
 
 <p align="center">
   <a href="docs/assets/idesk-showreel.mp4"><img src="docs/assets/idesk-showreel-preview.webp" width="820" alt="iDesk in motion: naming desktops, the Desktop Line, six hanging styles, effects, and screens for presenting. Click for the full video with sound."></a>
@@ -12,13 +12,13 @@
 
 iDesk is a menu bar app written in Swift with SwiftUI, AppKit, and ScreenCaptureKit, built from the same Capture Line that iSnap uses for screenshots.
 
-## What's new in v1.1.0
+## What's new in v1.1.1
 
-See [CHANGELOG.md](CHANGELOG.md) for the release notes.
+See [release notes](docs/releases/v1.1.1.md) and [CHANGELOG.md](CHANGELOG.md).
 
-- Move a window to another desktop from a searchable picker (`⌃⌥M`) or from the Desktop Line.
-- Group menu options under **Desktop Actions** and **Appearance**.
-- Restore the main screen when an external-only screen is disconnected, and restore the selected external screen when it reconnects.
+- Reduce background work with mouse-driven hover detection and on-demand desktop previews.
+- Pause unused animations and timers; use 15 FPS idle animation in Low Power Mode.
+- Include the window picker (`⌃⌥M`), grouped menus, and external-screen recovery introduced in v1.1.0.
 
 ## Highlights
 
@@ -71,6 +71,8 @@ With **External Screen Only**, unplugging that screen automatically brings the m
 
 Visual choices and language are grouped under **Appearance** in the menu bar. Rename, add, delete, and direct window moves are under **Desktop Actions**; the window picker and Show/Hide the Line stay at the top level. **Settings → Look** has a live preview.
 
+To reduce background power use, pointer tracking reacts to mouse events, and wind timers run only while a windy Desktop Line is revealed. The Settings animation pauses when its window is hidden or covered; idle animation also pauses when screens sleep or Reduce Motion is enabled. Low Power Mode lowers idle animation from 30 to 15 frames per second.
+
 ### And more
 
 - Full screen apps can hang on the line too (off by default)
@@ -84,7 +86,7 @@ macOS has no public API for Spaces, so iDesk works the way other Spaces utilitie
 - **Reading desktops** uses the window server's private `CGSCopyManagedDisplaySpaces` call, the same call iSnap uses to detect full screen apps. It needs no permission.
 - **Names live in iDesk.** They appear in iDesk's line, menu, and banner. Mission Control and the system itself still show "Desktop 1, 2, 3…"; no app can change that.
 - **Switching** presses the Mission Control shortcuts for you, which needs **Accessibility** access. If "Switch to Desktop N" is enabled in System Settings → Keyboard → Keyboard Shortcuts → Mission Control, iDesk jumps straight there; otherwise it walks with ⌃← / ⌃→ (on by default). iDesk reads your actual shortcuts from `com.apple.symbolichotkeys`.
-- **Previews** need **Screen Recording** access (optional). macOS cannot show a desktop you are not on, so each picture is taken while you are on that desktop and refreshed every 20 seconds while you stay. Visit each desktop once after installing. Without the permission, the wallpaper stands in. iDesk's own windows are left out of the pictures, and the pictures stay on your Mac in `~/Library/Caches/dev.idesk.app`.
+- **Previews** need **Screen Recording** access (optional). macOS cannot show a desktop you are not on, so each picture is taken at startup, after arriving on that desktop, and when opening the Desktop Line. Repeated requests within five seconds reuse the saved picture; idle desktops are not captured periodically. Visit each desktop once after installing. Without the permission, the wallpaper stands in. iDesk's own windows are left out of the pictures, and the pictures stay on your Mac in `~/Library/Caches/dev.idesk.app`.
 
 - **Adding and deleting desktops** uses Mission Control's own buttons through Accessibility (the approach of Hammerspoon's `hs.spaces`): iDesk opens Mission Control for a moment, presses the button, and closes it. If Mission Control does not show its buttons to iDesk, iDesk says so and offers to open Mission Control so you can do it by hand.
 - **Moving a window** reads the focused window through Accessibility and uses private SkyLight calls, including the compatibility-workspace route on macOS 14.5 and later described by [Hammerspoon](https://github.com/Hammerspoon/hammerspoon/blob/master/extensions/spaces/libspaces.m). Symbols are loaded at runtime and the window's Space membership is checked afterward; unsupported systems show an error.
@@ -106,7 +108,7 @@ Download the `.dmg` (or the `.zip`) from the [latest release](https://github.com
 2. Open **iDesk** from Applications. The first time, macOS says it cannot verify the app, because it is not notarized by Apple. This is expected for an independent release. Choose one of:
    - **System Settings → Privacy & Security**, scroll to *"iDesk" was blocked*, click **Open Anyway**, then confirm. (On macOS 14, right-click the app and choose **Open** instead.)
    - Or run once in Terminal: `xattr -dr com.apple.quarantine /Applications/iDesk.app`
-3. Grant permissions: iDesk lives in the menu bar. Grant **Accessibility** under **System Settings → Privacy & Security → Accessibility** to switch desktops, and (optionally) **Screen Recording** for live desktop previews, then restart iDesk. Visit each desktop once so its preview can be captured.
+3. Grant permissions: iDesk lives in the menu bar. Grant **Accessibility** under **System Settings → Privacy & Security → Accessibility** to switch desktops, and (optionally) **Screen Recording** for desktop previews, then restart iDesk. Visit each desktop once so its preview can be captured.
 
 Always run iDesk from **Applications** so macOS keeps your permissions. After an update you may have to toggle the permission off and on again, because this build is signed ad hoc. If you want to build from source instead, see below.
 

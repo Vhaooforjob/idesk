@@ -31,13 +31,17 @@ struct DesktopLineView: View {
     @ObservedObject var viewModel: DesktopLineViewModel
     /// Off only when rendering to an image, which cannot draw AppKit views.
     var isInteractive = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isVisible = false
+    @State private var lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
+    @State private var screenAwake = true
 
     /// The Settings preview keeps the line down and never tucks it away.
     private var revealed: Bool { viewModel.isPreview || viewModel.isRevealed }
 
     /// Only redraw every frame when something actually moves on its own.
     private var animates: Bool {
-        revealed && (viewModel.look.sway != .still || viewModel.look.particles != .none
+        isVisible && screenAwake && viewModel.isRenderingEnabled && !reduceMotion && revealed && (viewModel.look.sway != .still || viewModel.look.particles != .none
             || viewModel.look.style == .fairyLights || viewModel.look.style == .bunting)
     }
 
@@ -48,7 +52,7 @@ struct DesktopLineView: View {
             let scale = LineLayout.scale(count: count, width: width)
             let xs = (0..<count).map { LineLayout.x(index: $0, count: count, width: width) }
 
-            TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !animates)) { timeline in
+            TimelineView(.animation(minimumInterval: 1.0 / (lowPowerMode ? 15.0 : 30.0), paused: !animates)) { timeline in
                 let time = timeline.date.timeIntervalSinceReferenceDate
                 ZStack(alignment: .topLeading) {
                     LineDecor(style: viewModel.look.style, sway: viewModel.look.sway, width: width, cardXs: xs,
@@ -89,6 +93,17 @@ struct DesktopLineView: View {
                 revealed ? .spring(response: 0.42, dampingFraction: 0.82) : .easeIn(duration: 0.22),
                 value: revealed
             )
+        }
+        .onAppear { isVisible = true }
+        .onDisappear { isVisible = false }
+        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
+            lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
+        }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.screensDidSleepNotification)) { _ in
+            screenAwake = false
+        }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.screensDidWakeNotification)) { _ in
+            screenAwake = true
         }
         .coordinateSpace(name: DesktopLineView.space)
         .onPreferenceChange(LineHitRectsKey.self) { rects in
