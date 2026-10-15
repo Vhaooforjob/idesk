@@ -66,6 +66,14 @@ final class DisplayService: DisplayControlling, ObservableObject {
     private var preferredExternal: ExternalPreference?
     private var changing = false
     private var observer: NSObjectProtocol?
+    private let workspaceNotifications: NotificationCenter
+    private var workspaceObservers: [NSObjectProtocol] = []
+    private var sleeping = false
+    // Retain these independently: enumeration can briefly report a disabled
+    // panel as active during sleep, which clears turnedOff in reload().
+    private var sleepRecovery: [CGDirectDisplayID: DisplayInfo] = [:]
+    private var resumePreferenceAfter: Date?
+    private let now: () -> Date
     private var timer: Timer?
     private let observeChanges: Bool
 
@@ -73,9 +81,13 @@ final class DisplayService: DisplayControlling, ObservableObject {
         self.init(system: CoreGraphicsDisplaySystem())
     }
 
-    init(system: DisplaySystem, observeChanges: Bool = true) {
+    init(system: DisplaySystem, observeChanges: Bool = true,
+         workspaceNotifications: NotificationCenter = NSWorkspace.shared.notificationCenter,
+         now: @escaping () -> Date = Date.init) {
         self.system = system
         self.observeChanges = observeChanges
+        self.workspaceNotifications = workspaceNotifications
+        self.now = now
         reload()
         guard observeChanges else { return }
         observer = NotificationCenter.default.addObserver(
@@ -84,12 +96,62 @@ final class DisplayService: DisplayControlling, ObservableObject {
             // Never reconfigure inside a system notification/configuration call.
             DispatchQueue.main.async { self?.refresh() }
         }
+        for name in [NSWorkspace.willSleepNotification, NSWorkspace.screensDidSleepNotification] {
+            workspaceObservers.append(workspaceNotifications.addObserver(
+                forName: name, object: nil, queue: .main
+            ) { [weak self] notification in
+                MainActor.assumeIsolated {
+                    self?.prepareForSleep(restoreBeforeSleep: notification.name == NSWorkspace.willSleepNotification)
+                }
+            })
+        }
+        for name in [NSWorkspace.didWakeNotification, NSWorkspace.screensDidWakeNotification] {
+            workspaceObservers.append(workspaceNotifications.addObserver(
+                forName: name, object: nil, queue: .main
+            ) { [weak self] _ in
+                DispatchQueue.main.async { self?.resumeAfterSleep() }
+            })
+        }
+    }
+
+    private func prepareForSleep(restoreBeforeSleep: Bool) {
+        sleeping = true
+        resumePreferenceAfter = nil
+        rememberSleepRecovery()
+        updateRecoveryTimer()
+        guard restoreBeforeSleep, !changing else { return }
+        changing = true
+        defer { reload(); changing = false }
+        // Do this synchronously before system sleep. Never reapply external-only
+        // in response to the screen notifications this restoration generates.
+        reload()
+        do { try restoreAvailable() }
+        catch { log.error("Screen recovery before sleep: \(error.localizedDescription, privacy: .public)") }
+    }
+
+    private func resumeAfterSleep() {
+        sleeping = false
+        rememberSleepRecovery()
+        // WindowServer may still advertise the unplugged monitor at wake.
+        // Enable recovery candidates first and allow enumeration to settle.
+        resumePreferenceAfter = now().addingTimeInterval(3)
+        refresh()
+    }
+
+    private func rememberSleepRecovery() {
+        for (id, display) in turnedOff { sleepRecovery[id] = display }
+        // A transient active report may already have cleared turnedOff before
+        // the sleep notification. Keep the laptop's fallback in that case too.
+        if preferredExternal != nil {
+            for display in displays where display.isBuiltin { sleepRecovery[display.id] = display }
+        }
     }
 
     /// Keep the recovery watchdog only while iDesk has a screen preference
     /// to recover. Normal all-screen use needs no periodic wakeups.
     private func updateRecoveryTimer() {
-        guard observeChanges, preferredExternal != nil || !turnedOff.isEmpty else {
+        guard observeChanges, !sleeping,
+              preferredExternal != nil || !turnedOff.isEmpty || !sleepRecovery.isEmpty else {
             timer?.invalidate()
             timer = nil
             return
@@ -105,6 +167,7 @@ final class DisplayService: DisplayControlling, ObservableObject {
 
     deinit {
         if let observer { NotificationCenter.default.removeObserver(observer) }
+        for observer in workspaceObservers { workspaceNotifications.removeObserver(observer) }
         timer?.invalidate()
     }
 
@@ -116,11 +179,14 @@ final class DisplayService: DisplayControlling, ObservableObject {
     }
 
     func refresh() {
-        guard !changing else { return }
+        guard !changing, !sleeping else { return }
         changing = true
         defer { reload(); changing = false; updateRecoveryTimer() }
         reload()
         do {
+            if !sleepRecovery.isEmpty { try restoreAfterSleep() }
+            if let deadline = resumePreferenceAfter, now() < deadline { return }
+            resumePreferenceAfter = nil
             if let preferredExternal {
                 let target = online.first { display in
                     guard !display.isBuiltin else { return false }
@@ -158,6 +224,8 @@ final class DisplayService: DisplayControlling, ObservableObject {
         let preference = external.map { ExternalPreference(id: $0.id, uuid: system.identifier(for: $0.id)) }
         try change(layout)
         preferredExternal = preference
+        sleepRecovery.removeAll()
+        resumePreferenceAfter = nil
     }
 
     func recoverAll() throws {
@@ -167,6 +235,7 @@ final class DisplayService: DisplayControlling, ObservableObject {
         changing = true
         defer { reload(); changing = false; updateRecoveryTimer() }
         reload()
+        if !sleepRecovery.isEmpty { try restoreAfterSleep() }
         try restoreAvailable()
     }
 
@@ -181,7 +250,8 @@ final class DisplayService: DisplayControlling, ObservableObject {
         for display in online where display.isEnabled { turnedOff[display.id] = nil }
         var fresh = online
         let ids = Set(online.map(\.id))
-        for (id, info) in turnedOff where !ids.contains(id) {
+        let candidates = turnedOff.merging(sleepRecovery) { current, _ in current }
+        for (id, info) in candidates where !ids.contains(id) {
             var info = info
             info.isEnabled = false
             fresh.append(info)
@@ -241,6 +311,33 @@ final class DisplayService: DisplayControlling, ObservableObject {
         reload()
         if let firstError { throw firstError }
         if !dark.isEmpty && !online.contains(where: \.isEnabled) { throw DisplayError.noScreenLeft }
+    }
+
+    private func restoreAfterSleep() throws {
+        var firstError: Error?
+        let candidates = sleepRecovery.values.sorted {
+            ($0.isBuiltin ? 0 : 1, $0.id) < ($1.isBuiltin ? 0 : 1, $1.id)
+        }
+        for display in candidates {
+            do {
+                // Force an enable even if the first wake snapshot says active.
+                try system.setEnabled([display.id], true)
+                reload()
+                if online.contains(where: { $0.id == display.id && $0.isEnabled }) {
+                    sleepRecovery[display.id] = nil
+                }
+            } catch {
+                if !display.isBuiltin && !online.contains(where: { $0.id == display.id }) {
+                    sleepRecovery[display.id] = nil
+                    turnedOff[display.id] = nil
+                } else if firstError == nil {
+                    firstError = error
+                }
+            }
+        }
+        if let firstError { throw firstError }
+        // Keep retrying delayed enables before allowing external-only again.
+        if !sleepRecovery.isEmpty { throw DisplayError.noScreenLeft }
     }
 }
 

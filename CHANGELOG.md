@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.2 — 2026-10-15
+
+- Restore disabled screens before system sleep and retry on wake, including when the external-only screen was unplugged while asleep.
+- Pause automatic layout changes while screens sleep and briefly after wake, preserving the external-only preference for reconnection.
+
 ## v1.1.1 — 2026-10-14
 
 - Replace continuous pointer polling with mouse events and one-shot hover timers.

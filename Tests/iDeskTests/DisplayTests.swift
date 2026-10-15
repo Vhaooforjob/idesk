@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import CoreGraphics
 import XCTest
@@ -181,10 +182,11 @@ private final class FakeDisplaySystem: DisplaySystem {
     var changes: [Change] = []
     var afterChange: (() -> Void)?
     var failAfterDisable = false
+    var reported: [DisplayInfo]?
     var menuBarDisplay: CGDirectDisplayID = 1
     var canTurnOff = true
 
-    func read() -> [DisplayInfo] { connected.filter { !hideDisabled || $0.isEnabled } }
+    func read() -> [DisplayInfo] { reported ?? connected.filter { !hideDisabled || $0.isEnabled } }
     func identifier(for id: CGDirectDisplayID) -> String? { uuids[id] }
     func setEnabled(_ ids: [CGDirectDisplayID], _ enabled: Bool) throws {
         changes.append(Change(ids: ids, enabled: enabled))
@@ -202,6 +204,195 @@ private final class FakeDisplaySystem: DisplaySystem {
 
 @MainActor
 final class DisplayServiceTests: XCTestCase {
+    private func wake(_ notifications: NotificationCenter,
+                      name: Notification.Name = NSWorkspace.didWakeNotification) async {
+        notifications.post(name: name, object: nil)
+        // Wake recovery is queued to avoid configuring inside a notification.
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+    }
+
+    func testSleepRestoresBuiltInAndUnplugWhileAsleepKeepsItOn() async throws {
+        let system = FakeDisplaySystem()
+        let notifications = NotificationCenter()
+        var now = Date()
+        let service = DisplayService(system: system, workspaceNotifications: notifications, now: { now })
+        try service.apply(DisplayLayout(enabled: [3]))
+
+        notifications.post(name: NSWorkspace.willSleepNotification, object: nil)
+        XCTAssertEqual(system.lit, [1, 3], "restore before the machine sleeps")
+        system.changes.removeAll()
+        service.refresh()
+        XCTAssertTrue(system.changes.isEmpty, "screen events must not reapply external-only during sleep")
+        notifications.post(name: NSWorkspace.screensDidSleepNotification, object: nil)
+        system.connected = [off(builtIn)]
+
+        await wake(notifications)
+        XCTAssertEqual(system.lit, [1])
+        now = now.addingTimeInterval(4)
+        service.refresh()
+        XCTAssertEqual(service.currentLayout.enabled, [1])
+        system.connected.append(tv)
+        service.refresh()
+        XCTAssertEqual(system.lit, [3], "the external preference survives sleep")
+    }
+
+    func testWakeDoesNotImmediatelyDarkenFallbackWithStaleExternalSnapshot() async throws {
+        let system = FakeDisplaySystem()
+        let notifications = NotificationCenter()
+        var now = Date()
+        let service = DisplayService(system: system, workspaceNotifications: notifications, now: { now })
+        try service.apply(DisplayLayout(enabled: [3]))
+        notifications.post(name: NSWorkspace.willSleepNotification, object: nil)
+        system.changes.removeAll()
+
+        await wake(notifications)
+        service.refresh()
+        XCTAssertEqual(system.lit, [1, 3])
+        XCTAssertFalse(system.changes.contains { !$0.enabled })
+        system.connected.removeAll { $0.id == 3 }
+        now = now.addingTimeInterval(4)
+        service.refresh()
+        XCTAssertEqual(system.lit, [1])
+    }
+
+    func testWakeForcesEnableDespiteTransientActiveReport() async throws {
+        let system = FakeDisplaySystem()
+        let notifications = NotificationCenter()
+        let service = DisplayService(system: system, workspaceNotifications: notifications)
+        try service.apply(DisplayLayout(enabled: [3]))
+        notifications.post(name: NSWorkspace.screensDidSleepNotification, object: nil)
+        system.connected = [off(builtIn)]
+        system.reported = [builtIn, tv]
+        system.changes.removeAll()
+        await wake(notifications, name: NSWorkspace.screensDidWakeNotification)
+        XCTAssertEqual(system.lit, [1])
+        XCTAssertEqual(system.changes, [.init(ids: [1], enabled: true)])
+    }
+
+    func testWakeRetainsBuiltInFallbackWhenActiveReportPrecedesSleep() async throws {
+        let system = FakeDisplaySystem()
+        let notifications = NotificationCenter()
+        let service = DisplayService(system: system, workspaceNotifications: notifications)
+        try service.apply(DisplayLayout(enabled: [3]))
+        system.reported = [builtIn, tv]
+        service.refresh() // macOS reports active, although the panel is still off.
+        notifications.post(name: NSWorkspace.screensDidSleepNotification, object: nil)
+        system.reported = nil
+        system.connected = [off(builtIn)]
+        await wake(notifications)
+        XCTAssertEqual(system.lit, [1])
+    }
+
+    func testFailedSleepAndWakeEnablesRetryBeforeRestoringPreference() async throws {
+        let system = FakeDisplaySystem()
+        let notifications = NotificationCenter()
+        var now = Date()
+        let service = DisplayService(system: system, workspaceNotifications: notifications, now: { now })
+        try service.apply(DisplayLayout(enabled: [3]))
+        system.failing = [1]
+        notifications.post(name: NSWorkspace.willSleepNotification, object: nil)
+        system.connected.removeAll { $0.id == 3 }
+        await wake(notifications)
+        XCTAssertTrue(system.lit.isEmpty)
+        now = now.addingTimeInterval(4)
+        system.failing.removeAll()
+        let recovered = expectation(description: "Wake restarts the recovery watchdog")
+        system.afterChange = {
+            if system.lit == [1] { recovered.fulfill() }
+        }
+        await fulfillment(of: [recovered], timeout: 3)
+        system.afterChange = nil
+        XCTAssertEqual(system.lit, [1])
+        system.connected.append(tv)
+        service.refresh()
+        XCTAssertEqual(system.lit, [3])
+    }
+
+    func testDelayedWakeEnableKeepsRetryingEvenAfterPreferenceGracePeriod() async throws {
+        let system = FakeDisplaySystem()
+        let notifications = NotificationCenter()
+        var now = Date()
+        let service = DisplayService(system: system, workspaceNotifications: notifications, now: { now })
+        try service.apply(DisplayLayout(enabled: [3]))
+        notifications.post(name: NSWorkspace.screensDidSleepNotification, object: nil)
+        system.delayed = [1]
+        await wake(notifications)
+        now = now.addingTimeInterval(4)
+        system.changes.removeAll()
+        service.refresh()
+        XCTAssertTrue(system.changes.contains(.init(ids: [1], enabled: true)))
+        XCTAssertFalse(system.changes.contains { !$0.enabled })
+        system.delayed.removeAll()
+        system.connected.removeAll { $0.id == 3 }
+        service.refresh()
+        XCTAssertEqual(system.lit, [1])
+    }
+
+    func testWakeWithoutSleepNotificationStillRestoresDisabledScreen() async throws {
+        let system = FakeDisplaySystem()
+        let notifications = NotificationCenter()
+        let service = DisplayService(system: system, workspaceNotifications: notifications)
+        try service.apply(DisplayLayout(enabled: [3]))
+        system.connected = [off(builtIn)]
+        await wake(notifications)
+        XCTAssertEqual(system.lit, [1])
+    }
+
+    func testAttachedExternalOnlyReturnsAfterWakeGracePeriod() async throws {
+        let system = FakeDisplaySystem()
+        let notifications = NotificationCenter()
+        var now = Date()
+        let service = DisplayService(system: system, workspaceNotifications: notifications, now: { now })
+        try service.apply(DisplayLayout(enabled: [3]))
+        notifications.post(name: NSWorkspace.willSleepNotification, object: nil)
+        await wake(notifications)
+        XCTAssertEqual(system.lit, [1, 3])
+        now = now.addingTimeInterval(4)
+        service.refresh()
+        XCTAssertEqual(system.lit, [3])
+    }
+
+    func testDetachedRecoveryCandidateDoesNotBlockBuiltInAfterWake() async throws {
+        let system = FakeDisplaySystem()
+        system.connected.append(projector)
+        let notifications = NotificationCenter()
+        let service = DisplayService(system: system, workspaceNotifications: notifications)
+        try service.apply(DisplayLayout(enabled: [3]))
+        notifications.post(name: NSWorkspace.screensDidSleepNotification, object: nil)
+        system.connected = [off(builtIn)]
+        system.changes.removeAll()
+        await wake(notifications)
+        XCTAssertEqual(system.lit, [1])
+        XCTAssertEqual(system.changes.first, .init(ids: [1], enabled: true))
+        XCTAssertFalse(service.displays.contains { $0.id == 5 })
+    }
+
+    func testAllOnDuringWakeCancelsExternalPreference() async throws {
+        let system = FakeDisplaySystem()
+        let notifications = NotificationCenter()
+        var now = Date()
+        let service = DisplayService(system: system, workspaceNotifications: notifications, now: { now })
+        try service.apply(DisplayLayout(enabled: [3]))
+        notifications.post(name: NSWorkspace.willSleepNotification, object: nil)
+        await wake(notifications)
+        try service.recoverAll()
+        now = now.addingTimeInterval(4)
+        service.refresh()
+        XCTAssertEqual(system.lit, [1, 3])
+    }
+
+    func testSleepAndWakeWithAllScreensOnDoesNotReconfigure() async {
+        let system = FakeDisplaySystem()
+        let notifications = NotificationCenter()
+        let service = DisplayService(system: system, workspaceNotifications: notifications)
+        notifications.post(name: NSWorkspace.willSleepNotification, object: nil)
+        await wake(notifications)
+        service.refresh()
+        XCTAssertTrue(system.changes.isEmpty)
+    }
+
     func testWatchdogRecoversAnUnplugWithoutASystemNotification() async throws {
         let system = FakeDisplaySystem()
         let service = DisplayService(system: system)

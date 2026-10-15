@@ -12,13 +12,13 @@
 
 iDesk is a menu bar app written in Swift with SwiftUI, AppKit, and ScreenCaptureKit, built from the same Capture Line that iSnap uses for screenshots.
 
-## What's new in v1.1.1
+## What's new in v1.1.2
 
-See [release notes](docs/releases/v1.1.1.md) and [CHANGELOG.md](CHANGELOG.md).
+See [release notes](docs/releases/v1.1.2.md) and [CHANGELOG.md](CHANGELOG.md).
 
-- Reduce background work with mouse-driven hover detection and on-demand desktop previews.
-- Pause unused animations and timers; use 15 FPS idle animation in Low Power Mode.
-- Include the window picker (`⌃⌥M`), grouped menus, and external-screen recovery introduced in v1.1.0.
+- Restore disabled screens before system sleep and retry on wake when the external screen was unplugged while asleep.
+- Pause automatic layout changes during sleep and briefly after wake so the built-in display is not immediately turned off again.
+- Preserve the external-only preference when the selected external screen reconnects.
 
 ## Highlights
 
@@ -49,6 +49,8 @@ With more than one screen connected, the menu bar's **Screens** submenu and **Se
 Turning a screen off asks you to keep the change and undoes it after 15 seconds without an answer, in case the dialog ended up on a dark screen. `⌃⌥⌘D` turns every screen back on, and so do quitting iDesk and logging out.
 
 With **External Screen Only**, unplugging that screen automatically brings the main screen back on. Reconnecting the same screen restores external-only mode once it is active, even if macOS assigns it a new display ID. iDesk remembers this choice while it is running; choosing another layout or turning every screen back on cancels it.
+
+Before system sleep, iDesk attempts to re-enable screens it turned off and pauses automatic layout changes. On wake, it retries recovery and waits at least three seconds before restoring external-only mode, allowing macOS to update its screen list. If the external screen was unplugged while asleep, the built-in screen stays on. Other layouts with disabled screens return to all available screens on after sleep.
 
 ### Six ways to hang
 
