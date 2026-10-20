@@ -21,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: SettingsWindowController?
     private var menuBar: MenuBarController?
     private var windowPicker: WindowPickerWindowController?
+    private var desktopSearch: DesktopSearchWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let environment = AppEnvironment(dialogs: AlertDialogs())
@@ -28,11 +29,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let settingsWindow = SettingsWindowController(makeViewModel: environment.makeSettingsViewModel)
         self.settingsWindow = settingsWindow
-        let windowPicker = WindowPickerWindowController(desktops: environment.desktops)
+        let windowPicker = WindowPickerWindowController(desktops: environment.desktops, settingsStore: environment.settingsStore)
         self.windowPicker = windowPicker
         environment.showWindowPicker = { [weak windowPicker] in windowPicker?.toggle() }
+        let desktopSearch = DesktopSearchWindowController(desktops: environment.desktops)
+        self.desktopSearch = desktopSearch
+        environment.showDesktopSearch = { [weak desktopSearch] in desktopSearch?.toggle() }
         menuBar = MenuBarController(viewModel: environment.menuBar, openSettings: settingsWindow.show,
-                                    openWindowPicker: windowPicker.toggle)
+                                    openWindowPicker: windowPicker.toggle, openDesktopSearch: desktopSearch.toggle)
         bannerWindow = NameBannerWindowController(viewModel: environment.banner)
 
         environment.start()

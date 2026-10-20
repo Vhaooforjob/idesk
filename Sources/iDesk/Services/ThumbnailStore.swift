@@ -14,6 +14,10 @@ private let log = Logger(subsystem: "dev.idesk.app", category: "Thumbnails")
 final class ThumbnailStore: ObservableObject {
     @Published private(set) var images: [String: NSImage] = [:]
 
+    @Published private(set) var dates: [String: Date] = [:]
+    private(set) var storesOnDisk: Bool
+    private var generation = 0
+
     static let width = 480
     private let folder: URL
     private struct CaptureKey: Hashable {
@@ -32,39 +36,64 @@ final class ThumbnailStore: ObservableObject {
             .appendingPathComponent("dev.idesk.app/Thumbnails", isDirectory: true)
     }
 
-    init(folder: URL = ThumbnailStore.defaultFolder,
+    init(folder: URL = ThumbnailStore.defaultFolder, storesOnDisk: Bool = true,
          canCapture: @escaping () -> Bool = { PermissionService.canCapturePreviews },
          now: @escaping () -> Date = Date.init,
          captureImage: @escaping (CGDirectDisplayID) async throws -> CGImage? = { try await ThumbnailStore.screenshot(on: $0) }) {
         self.folder = folder
+        self.storesOnDisk = storesOnDisk
         self.canCapture = canCapture
         self.now = now
         self.captureImage = captureImage
-        loadSaved()
+        if storesOnDisk { loadSaved() }
     }
 
     /// Photographs the screen as it is now. `stillThere` is asked once the
     /// picture is ready, so a picture taken during a switch is dropped.
-    func capture(_ space: DesktopSpace, on screen: NSScreen, stillThere: @escaping () -> Bool) {
+    func capture(_ space: DesktopSpace, on screen: NSScreen, force: Bool = false, stillThere: @escaping () -> Bool) {
         let displayID = screen.displayID
         let key = CaptureKey(spaceID: space.id, displayID: displayID)
         guard !capturingDisplays.contains(displayID),
-              capturedAt[key].map({ now().timeIntervalSince($0) >= Self.minimumCaptureInterval }) ?? true else { return }
+              force || (capturedAt[key].map({ now().timeIntervalSince($0) >= Self.minimumCaptureInterval }) ?? true) else { return }
         guard canCapture() else {
             if images[space.id] == nil { useWallpaper(for: space, on: screen) }
             return
         }
         capturingDisplays.insert(displayID)
+        let requestGeneration = generation
         Task { [weak self] in
             guard let self else { return }
             defer { self.capturingDisplays.remove(displayID) }
             do {
-                guard stillThere(), let image = try await self.captureImage(displayID), stillThere() else { return }
+                guard stillThere(), let image = try await self.captureImage(displayID), stillThere(), requestGeneration == self.generation else { return }
+                self.dates[space.id] = self.now()
                 self.store(image, for: space.id)
                 self.capturedAt[key] = self.now()
             } catch {
                 log.error("Capture failed: \(error.localizedDescription, privacy: .public)")
             }
+        }
+    }
+
+    /// Invalidate in-flight captures before removing files, so Clear cannot be undone by a late result.
+    func clear() throws {
+        generation += 1
+        images = [:]
+        dates = [:]
+        capturedAt = [:]
+        try removeSaved()
+    }
+
+    func setStoresOnDisk(_ enabled: Bool) throws {
+        storesOnDisk = enabled
+        if !enabled { try removeSaved() }
+    }
+
+    private func removeSaved() throws {
+        guard FileManager.default.fileExists(atPath: folder.path) else { return }
+        for file in try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
+            where file.pathExtension == "jpg" {
+            try FileManager.default.removeItem(at: file)
         }
     }
 
@@ -82,6 +111,8 @@ final class ThumbnailStore: ObservableObject {
     }
 
     func forget(keeping ids: Set<String>) {
+        generation += 1
+        dates = dates.filter { ids.contains($0.key) }
         capturedAt = capturedAt.filter { ids.contains($0.key.spaceID) }
         for id in images.keys where !ids.contains(id) {
             images[id] = nil
@@ -102,6 +133,7 @@ final class ThumbnailStore: ObservableObject {
 
     private func store(_ image: CGImage, for id: String) {
         images[id] = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
+        guard storesOnDisk else { return }
         let rep = NSBitmapImageRep(cgImage: image)
         guard let data = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.82]) else { return }
         do {
@@ -116,7 +148,9 @@ final class ThumbnailStore: ObservableObject {
         guard let files = try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil) else { return }
         for file in files where file.pathExtension == "jpg" {
             if let image = NSImage(contentsOf: file) {
-                images[file.deletingPathExtension().lastPathComponent] = image
+                let id = file.deletingPathExtension().lastPathComponent
+                images[id] = image
+                dates[id] = (try? file.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
             }
         }
     }

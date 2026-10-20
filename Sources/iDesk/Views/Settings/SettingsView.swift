@@ -12,6 +12,8 @@ struct SettingsView: View {
                 .tabItem { Label("Look", systemImage: "sparkles") }
             ScreensTab(viewModel: viewModel.screens)
                 .tabItem { Label("Screens", systemImage: "display.2") }
+            PresetsTab(viewModel: viewModel.presets, displays: viewModel.screens)
+                .tabItem { Label("Presets", systemImage: "slider.horizontal.3") }
             GeneralTab(viewModel: viewModel)
                 .tabItem { Label("General", systemImage: "gearshape") }
         }
@@ -53,6 +55,12 @@ private struct DesktopsTab: View {
                 }
             }
             .listStyle(.inset(alternatesRowBackgrounds: true))
+            HStack {
+                Button("Refresh Current Previews") { viewModel.refreshPreviews() }
+                    .disabled(!viewModel.settings.showsPreviews)
+                Button("Clear Preview Cache", role: .destructive) { viewModel.clearPreviews() }
+            }
+            if let error = viewModel.previewError { Text(error).foregroundStyle(.red) }
             Text("Previews are taken while you are on a desktop. Visit each desktop once to see its picture.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -101,6 +109,26 @@ private struct DesktopRowView: View {
                 }
                 TextField(space.defaultName, text: name)
                     .textFieldStyle(.roundedBorder)
+                HStack {
+                    Picker("Color", selection: Binding(
+                        get: { viewModel.settings.appearances[space.id]?.color ?? .accent },
+                        set: { viewModel.settings.appearances[space.id, default: DesktopAppearance()].color = $0 }
+                    )) {
+                        ForEach(DesktopColor.allCases) { Text($0.title).tag($0) }
+                    }.frame(width: 150)
+                    Picker("Icon", selection: Binding(
+                        get: { viewModel.settings.appearances[space.id]?.symbol ?? "rectangle.on.rectangle" },
+                        set: { viewModel.settings.appearances[space.id, default: DesktopAppearance()].symbol = $0 }
+                    )) {
+                        ForEach(DesktopAppearance.symbols, id: \.self) { Image(systemName: $0).tag($0) }
+                    }.frame(width: 100)
+                }
+                if let date = viewModel.previewDate(for: space) {
+                    Text("Captured \(date.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.caption2).foregroundStyle(.secondary)
+                } else {
+                    Text("No captured preview").font(.caption2).foregroundStyle(.secondary)
+                }
             }
 
             Button {
@@ -311,6 +339,17 @@ private struct ArrangementRow: View {
 private struct GeneralTab: View {
     @ObservedObject var viewModel: SettingsViewModel
 
+    private func shortcut(_ title: LocalizedStringKey, action: HotkeyService.Action, value: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            LabeledContent(title) {
+                ShortcutRecorder(value: value).frame(width: 170, height: 24)
+            }
+            if let error = viewModel.shortcutErrors[action] {
+                Text(error).font(.caption).foregroundStyle(.red)
+            }
+        }
+    }
+
     private var launchAtLogin: Binding<Bool> {
         Binding(get: { viewModel.launchAtLogin }, set: { viewModel.setLaunchAtLogin($0) })
     }
@@ -331,26 +370,21 @@ private struct GeneralTab: View {
                 }
             }
             Section("Shortcuts") {
-                LabeledContent("Show or hide the line") {
-                    TextField("⌃⌥D", text: $viewModel.settings.toggleLineHotkey).frame(width: 120)
-                }
-                LabeledContent("Rename current desktop") {
-                    TextField("⌃⌥R", text: $viewModel.settings.renameHotkey).frame(width: 120)
-                }
-                LabeledContent("Open window picker") {
-                    TextField("⌃⌥M", text: $viewModel.settings.moveWindowHotkey).frame(width: 120)
-                }
-                if !viewModel.settings.moveWindowHotkey.isEmpty,
-                   HotkeyService.parse(viewModel.settings.moveWindowHotkey) == nil {
-                    Text("Use modifiers and one key, for example ⌃⌥M.")
-                        .font(.caption).foregroundStyle(.red)
-                }
-                LabeledContent("Turn every screen back on") {
-                    TextField("⌃⌥⌘D", text: $viewModel.settings.restoreDisplaysHotkey).frame(width: 120)
-                }
-                Text("Write shortcuts with ⌃ ⌥ ⇧ ⌘ and a key, for example ⌃⌥D.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                shortcut("Show or hide the line", action: .toggleLine, value: $viewModel.settings.toggleLineHotkey)
+                shortcut("Rename current desktop", action: .renameCurrent, value: $viewModel.settings.renameHotkey)
+                shortcut("Find Desktop", action: .searchDesktops, value: $viewModel.settings.searchDesktopsHotkey)
+                shortcut("Previous Desktop", action: .previousDesktop, value: $viewModel.settings.previousDesktopHotkey)
+                shortcut("Open window picker", action: .moveWindow, value: $viewModel.settings.moveWindowHotkey)
+                shortcut("Turn every screen back on", action: .restoreDisplays, value: $viewModel.settings.restoreDisplaysHotkey)
+                Text("Click a shortcut and press keys. Esc cancels; Delete clears it.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section("Preview Storage") {
+                Toggle("Save previews on disk", isOn: $viewModel.settings.storesPreviewsOnDisk)
+                Text("Turn off to keep previews only in memory and remove saved preview files.")
+                    .font(.caption).foregroundStyle(.secondary)
+                Button("Clear Preview Cache", role: .destructive) { viewModel.clearPreviews() }
+                if let error = viewModel.previewError { Text(error).foregroundStyle(.red) }
             }
             Section("Permissions") {
                 PermissionRow(

@@ -83,6 +83,12 @@ final class WindowPickerViewModel: ObservableObject {
         }
     }
 
+    func stepDestination(_ offset: Int) {
+        guard !destinations.isEmpty else { return }
+        let index = destinations.firstIndex { $0.id == selectedDestinationID } ?? 0
+        selectedDestinationID = destinations[min(max(index + offset, 0), destinations.count - 1)].id
+    }
+
     func stepWindow(_ offset: Int) {
         let visible = filteredWindows
         guard !visible.isEmpty else { return }

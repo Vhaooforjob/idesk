@@ -90,6 +90,22 @@ final class WindowPickerTests: XCTestCase {
         XCTAssertEqual(model.moveRequest?.window.id, 99)
     }
 
+    func testDestinationNavigationKeepsWindowAndStopsAtEnds() async {
+        let model = WindowPickerViewModel(readWindows: { [candidate(42)] },
+            readDestinations: { _ in [destination(2), destination(3)] })
+        await model.load()
+        model.stepDestination(-1)
+        XCTAssertEqual(model.selectedDestinationID, "S2")
+        model.stepDestination(1)
+        model.stepDestination(1)
+        XCTAssertEqual(model.selectedDestinationID, "S3")
+        XCTAssertEqual(model.selectedWindowID, 42)
+        XCTAssertEqual(model.moveRequest?.destination.id, "S3")
+        model.query = "missing"
+        model.stepDestination(1)
+        XCTAssertNil(model.moveRequest)
+    }
+
     func testArrowNavigationStopsAtEnds() async {
         let model = WindowPickerViewModel(readWindows: { [candidate(42), candidate(43)] }, readDestinations: { _ in [destination(2)] })
         await model.load()

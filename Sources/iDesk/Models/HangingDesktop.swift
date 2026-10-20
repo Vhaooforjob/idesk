@@ -5,6 +5,7 @@ struct HangingDesktop: Identifiable, Equatable {
     let space: DesktopSpace
     var name: String
     var thumbnail: NSImage?
+    var appearance = DesktopAppearance()
     /// Width over height of the display, for pictures not taken yet.
     var aspect: CGFloat = 16 / 10
 
@@ -25,7 +26,7 @@ struct HangingDesktop: Identifiable, Equatable {
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.space == rhs.space && lhs.name == rhs.name && lhs.thumbnail === rhs.thumbnail && lhs.aspect == rhs.aspect
+        lhs.space == rhs.space && lhs.name == rhs.name && lhs.thumbnail === rhs.thumbnail && lhs.aspect == rhs.aspect && lhs.appearance == rhs.appearance
     }
 }
 

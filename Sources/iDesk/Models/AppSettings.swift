@@ -148,6 +148,12 @@ struct AppSettings: Codable, Equatable {
     var toggleLineHotkey = "⌃⌥D"
     var renameHotkey = "⌃⌥R"
     var moveWindowHotkey = "⌃⌥M"
+    var searchDesktopsHotkey = "⌃⌥S"
+    var previousDesktopHotkey = "⌃⌥P"
+    var followMovedWindow = true
+    var storesPreviewsOnDisk = true
+    var appearances: [String: DesktopAppearance] = [:]
+    var presets: [WorkspacePreset] = []
     /// A way back when a screen setup leaves you without a usable screen.
     var restoreDisplaysHotkey = "⌃⌥⌘D"
     /// Desktop names by Space UUID. A missing or empty name means the
@@ -173,6 +179,12 @@ struct AppSettings: Codable, Equatable {
         renameHotkey = (try? c.decode(String.self, forKey: .renameHotkey)) ?? d.renameHotkey
         moveWindowHotkey = (try? c.decode(String.self, forKey: .moveWindowHotkey)) ?? d.moveWindowHotkey
         restoreDisplaysHotkey = (try? c.decode(String.self, forKey: .restoreDisplaysHotkey)) ?? d.restoreDisplaysHotkey
+        searchDesktopsHotkey = (try? c.decode(String.self, forKey: .searchDesktopsHotkey)) ?? d.searchDesktopsHotkey
+        previousDesktopHotkey = (try? c.decode(String.self, forKey: .previousDesktopHotkey)) ?? d.previousDesktopHotkey
+        followMovedWindow = (try? c.decode(Bool.self, forKey: .followMovedWindow)) ?? d.followMovedWindow
+        storesPreviewsOnDisk = (try? c.decode(Bool.self, forKey: .storesPreviewsOnDisk)) ?? d.storesPreviewsOnDisk
+        appearances = (try? c.decode([String: DesktopAppearance].self, forKey: .appearances)) ?? d.appearances
+        presets = (try? c.decode([WorkspacePreset].self, forKey: .presets)) ?? d.presets
         names = (try? c.decode([String: String].self, forKey: .names)) ?? d.names
     }
 

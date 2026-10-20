@@ -18,6 +18,8 @@ final class AppEnvironment {
     let menuBar: MenuBarViewModel
     let displays: DisplaysViewModel
     var showWindowPicker: (() -> Void)?
+    var showDesktopSearch: (() -> Void)?
+    let presets: PresetsViewModel
 
     private let hotkeys = HotkeyService()
     private var cancellables: Set<AnyCancellable> = []
@@ -25,7 +27,7 @@ final class AppEnvironment {
     init(dialogs: DialogPresenting) {
         settingsStore = SettingsStore()
         spaceService = SpaceService()
-        thumbnailStore = ThumbnailStore()
+        thumbnailStore = ThumbnailStore(storesOnDisk: settingsStore.value.storesPreviewsOnDisk)
         displayService = DisplayService()
         self.dialogs = dialogs
 
@@ -40,16 +42,23 @@ final class AppEnvironment {
         line = DesktopLineViewModel(desktops: desktops)
         banner = NameBannerViewModel(desktops: desktops)
         displays = DisplaysViewModel(service: displayService, dialogs: dialogs)
-        menuBar = MenuBarViewModel(desktops: desktops, line: line, displays: displays, settingsStore: settingsStore, dialogs: dialogs)
+        presets = PresetsViewModel(store: settingsStore, displays: displays)
+        menuBar = MenuBarViewModel(desktops: desktops, line: line, displays: displays, settingsStore: settingsStore, dialogs: dialogs, presets: presets)
     }
 
     func makeSettingsViewModel() -> SettingsViewModel {
-        SettingsViewModel(settingsStore: settingsStore, desktops: desktops, screens: displays)
+        SettingsViewModel(settingsStore: settingsStore, desktops: desktops, screens: displays, hotkeys: hotkeys, presets: presets)
     }
 
     func start() {
         PermissionService.logState()
         desktops.start()
+        settingsStore.$value.map(\.storesPreviewsOnDisk).removeDuplicates()
+            .sink { [weak self] enabled in
+                guard let self else { return }
+                do { try self.thumbnailStore.setStoresOnDisk(enabled) }
+                catch { self.dialogs.showError(String(localized: "Could not clear preview cache"), error) }
+            }.store(in: &cancellables)
 
         hotkeys.onAction = { [weak self] action in
             switch action {
@@ -57,11 +66,12 @@ final class AppEnvironment {
             case .renameCurrent: self?.desktops.renameCurrent()
             case .restoreDisplays: self?.displays.turnEverythingOn()
             case .moveWindow: self?.showWindowPicker?()
+            case .searchDesktops: self?.showDesktopSearch?()
+            case .previousDesktop: self?.desktops.goToPreviousDesktop()
             }
         }
         settingsStore.$value
-            .map { [HotkeyService.Action.toggleLine: $0.toggleLineHotkey, .renameCurrent: $0.renameHotkey,
-                    .restoreDisplays: $0.restoreDisplaysHotkey, .moveWindow: $0.moveWindowHotkey] }
+            .map { HotkeyService.shortcuts(in: $0) }
             .removeDuplicates()
             .sink { [weak self] shortcuts in self?.hotkeys.register(shortcuts) }
             .store(in: &cancellables)
@@ -70,5 +80,6 @@ final class AppEnvironment {
     /// Screens iDesk turned off come back when it quits.
     func stop() {
         displayService.turnEverythingBackOn()
+        try? settingsStore.saveNow()
     }
 }

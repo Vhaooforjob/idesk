@@ -22,6 +22,7 @@ final class DesktopsViewModel {
     private let desktopManager: DesktopManaging
     private let dialogs: DialogPresenting
     private var lastCurrent: [String: String] = [:]
+    private(set) var previousSpaces: [String: String] = [:]
     private var previewWork: DispatchWorkItem?
     private var pendingPreviewSpaces: Set<String> = []
 
@@ -113,6 +114,7 @@ final class DesktopsViewModel {
                     space: space,
                     name: value.name(for: space),
                     thumbnail: value.showsPreviews ? thumbnail(for: space) : nil,
+                    appearance: value.appearances[space.id] ?? DesktopAppearance(),
                     aspect: aspect
                 )
             }
@@ -142,6 +144,9 @@ final class DesktopsViewModel {
     private func activeSpaceChanged() {
         switcher.spaceDidChange()
         let arrived = spaces.filter { $0.isCurrent && lastCurrent[$0.displayID] != $0.id }
+        for space in arrived {
+            if let previous = lastCurrent[space.displayID] { previousSpaces[space.displayID] = previous }
+        }
         rememberCurrent()
         guard let space = arrived.first else { return }
         arrivals.send(space)
@@ -167,6 +172,14 @@ final class DesktopsViewModel {
         lastCurrent = Dictionary(spaces.filter(\.isCurrent).map { ($0.displayID, $0.id) }, uniquingKeysWith: { first, _ in first })
     }
 
+    func goToPreviousDesktop() {
+        reload()
+        guard let current = currentSpace(on: SpaceService.screenUnderPointer),
+              let id = previousSpaces[current.displayID],
+              let target = spaces.first(where: { $0.id == id && $0.displayID == current.displayID }) else { return }
+        go(to: target)
+    }
+
     // MARK: Moving windows
 
     func captureWindowForMove() -> Result<WindowSelection, Error> {
@@ -187,7 +200,7 @@ final class DesktopsViewModel {
         return spaces.filter { $0.kind == .desktop && !$0.isCurrent }
     }
 
-    func moveWindow(_ selection: Result<WindowSelection, Error>, to destination: DesktopSpace) async {
+    func moveWindow(_ selection: Result<WindowSelection, Error>, to destination: DesktopSpace, follow: Bool = true) async {
         guard !isMovingWindow else { return }
         isMovingWindow = true
         defer { isMovingWindow = false }
@@ -195,6 +208,7 @@ final class DesktopsViewModel {
             let window = try selection.get()
             try await windowMover.move(window, to: destination)
             reload()
+            guard follow else { highlights.send(destination.id); return }
             guard let target = spaces.first(where: { $0.id == destination.id }) else { throw WindowMoveError.followFailed }
             switch switcher.go(to: target) {
             case .alreadyThere, .switching: break
@@ -283,9 +297,17 @@ final class DesktopsViewModel {
 
     // MARK: Previews
 
-    func refreshPreview(on screen: NSScreen) {
+    func previewDate(for space: DesktopSpace) -> Date? { thumbnailStore.dates[space.id] }
+
+    func clearPreviews() throws { try thumbnailStore.clear() }
+
+    func refreshCurrentPreviews() {
+        for screen in NSScreen.screens { refreshPreview(on: screen, force: true) }
+    }
+
+    func refreshPreview(on screen: NSScreen, force: Bool = false) {
         guard settings.showsPreviews, let space = currentSpace(on: screen) else { return }
-        thumbnailStore.capture(space, on: screen) { [weak self] in
+        thumbnailStore.capture(space, on: screen, force: force) { [weak self] in
             guard let self, self.settings.showsPreviews else { return false }
             self.reload()
             return self.currentSpace(on: screen)?.id == space.id

@@ -31,16 +31,23 @@ final class SettingsViewModel: ObservableObject {
     /// The Screens tab.
     let screens: DisplaysViewModel
 
+    @Published private(set) var shortcutErrors: [HotkeyService.Action: String] = [:]
+    @Published private(set) var previewError: String?
+    let presets: PresetsViewModel
+
     private let settingsStore: SettingsStore
     private let desktops: DesktopsViewModel
     private var cancellables: Set<AnyCancellable> = []
 
-    init(settingsStore: SettingsStore, desktops: DesktopsViewModel, screens: DisplaysViewModel) {
+    init(settingsStore: SettingsStore, desktops: DesktopsViewModel, screens: DisplaysViewModel, hotkeys: HotkeyService? = nil, presets: PresetsViewModel? = nil) {
         self.settingsStore = settingsStore
         self.desktops = desktops
         self.screens = screens
+        self.presets = presets ?? PresetsViewModel(store: settingsStore, displays: screens)
         settings = settingsStore.value
         preview = DesktopLineViewModel(preview: Self.sampleDesktops, settings: settingsStore.$value.eraseToAnyPublisher())
+
+        hotkeys?.$errors.sink { [weak self] in self?.shortcutErrors = $0 }.store(in: &cancellables)
 
         settingsStore.$value
             .sink { [weak self] value in
@@ -52,6 +59,13 @@ final class SettingsViewModel: ObservableObject {
             .sink { [weak self] in self?.updateDesktopGroups() }
             .store(in: &cancellables)
         updateDesktopGroups()
+    }
+
+    func previewDate(for space: DesktopSpace) -> Date? { desktops.previewDate(for: space) }
+    func refreshPreviews() { desktops.refreshCurrentPreviews() }
+    func clearPreviews() {
+        do { try desktops.clearPreviews(); previewError = nil }
+        catch { previewError = error.localizedDescription }
     }
 
     // MARK: Desktops tab

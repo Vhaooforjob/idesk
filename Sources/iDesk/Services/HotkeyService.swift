@@ -1,10 +1,17 @@
 import Carbon
 import Foundation
+import Combine
 
 /// System-wide shortcuts through Carbon, as in iSnap's GlobalHotkeyService.
 @MainActor
-final class HotkeyService {
-    enum Action: UInt32 { case toggleLine = 1, renameCurrent = 2, restoreDisplays = 3, moveWindow = 4 }
+final class HotkeyService: ObservableObject {
+    enum Action: UInt32 { case toggleLine = 1, renameCurrent = 2, restoreDisplays = 3, moveWindow = 4, searchDesktops = 5, previousDesktop = 6 }
+
+    @Published private(set) var errors: [Action: String] = [:]
+    static let recordingChanged = Notification.Name("iDeskShortcutRecordingChanged")
+    private var recording = false
+    private var shortcuts: [Action: String] = [:]
+    private var observer: AnyCancellable?
 
     var onAction: ((Action) -> Void)?
 
@@ -13,6 +20,12 @@ final class HotkeyService {
     private let signature: OSType = 0x6944534B // iDSK
 
     init() {
+        observer = NotificationCenter.default.publisher(for: Self.recordingChanged)
+            .sink { [weak self] note in
+                guard let self else { return }
+                self.recording = note.object as? Bool ?? false
+                self.register(self.shortcuts)
+            }
         var event = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
         InstallEventHandler(
             GetApplicationEventTarget(),
@@ -48,9 +61,14 @@ final class HotkeyService {
     }
 
     func register(_ shortcuts: [Action: String]) {
+        self.shortcuts = shortcuts
         references.forEach { if let ref = $0 { UnregisterEventHotKey(ref) } }
         references.removeAll()
-        for (action, shortcut) in shortcuts { register(shortcut, action: action) }
+        errors = Self.validationErrors(shortcuts)
+        guard !recording else { return }
+        for (action, shortcut) in shortcuts.sorted(by: { $0.key.rawValue < $1.key.rawValue }) where errors[action] == nil {
+            register(shortcut, action: action)
+        }
     }
 
     private func register(_ shortcut: String, action: Action) {
@@ -58,9 +76,36 @@ final class HotkeyService {
         var reference: EventHotKeyRef?
         let hotkeyID = EventHotKeyID(signature: signature, id: action.rawValue)
         guard RegisterEventHotKey(parsed.keyCode, parsed.modifiers, hotkeyID, GetApplicationEventTarget(), 0, &reference) == noErr else {
+            errors[action] = String(localized: "This shortcut could not be registered. Choose another combination.")
             return
         }
         references.append(reference)
+    }
+
+    static func validationErrors(_ shortcuts: [Action: String]) -> [Action: String] {
+        var errors: [Action: String] = [:]
+        var owners: [String: [Action]] = [:]
+        for (action, value) in shortcuts where !value.isEmpty {
+            guard let parsed = parse(value) else {
+                errors[action] = String(localized: "Use modifiers and one key, for example ⌃⌥M.")
+                continue
+            }
+            owners["\(parsed.keyCode):\(parsed.modifiers)", default: []].append(action)
+        }
+        for actions in owners.values where actions.count > 1 {
+            for action in actions { errors[action] = String(localized: "This shortcut is used by another iDesk action.") }
+        }
+        return errors
+    }
+
+    static func keyName(for code: UInt16) -> String? {
+        keyCodes.first { $0.value == UInt32(code) }?.key
+    }
+
+    static func shortcuts(in settings: AppSettings) -> [Action: String] {
+        [.toggleLine: settings.toggleLineHotkey, .renameCurrent: settings.renameHotkey,
+         .restoreDisplays: settings.restoreDisplaysHotkey, .moveWindow: settings.moveWindowHotkey,
+         .searchDesktops: settings.searchDesktopsHotkey, .previousDesktop: settings.previousDesktopHotkey]
     }
 
     /// Reads shortcuts written like "⌃⌥D" or "ctrl+option+D".
@@ -85,7 +130,7 @@ final class HotkeyService {
                 key = token.uppercased()
             }
         }
-        guard modifiers != 0, let key, let keyCode = keyCodes[key] else { return nil }
+        guard modifiers & UInt32(cmdKey | controlKey | optionKey) != 0, let key, let keyCode = keyCodes[key] else { return nil }
         return (keyCode, modifiers)
     }
 

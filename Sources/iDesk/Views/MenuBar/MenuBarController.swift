@@ -8,10 +8,12 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     private let viewModel: MenuBarViewModel
     private let openSettings: () -> Void
     private let openWindowPicker: () -> Void
+    private let openDesktopSearch: () -> Void
     private let statusItem: NSStatusItem
     private var cancellables: Set<AnyCancellable> = []
 
-    init(viewModel: MenuBarViewModel, openSettings: @escaping () -> Void, openWindowPicker: @escaping () -> Void) {
+    init(viewModel: MenuBarViewModel, openSettings: @escaping () -> Void, openWindowPicker: @escaping () -> Void, openDesktopSearch: @escaping () -> Void) {
+        self.openDesktopSearch = openDesktopSearch
         self.viewModel = viewModel
         self.openSettings = openSettings
         self.openWindowPicker = openWindowPicker
@@ -23,6 +25,10 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         menu.delegate = self
         statusItem.menu = menu
 
+        viewModel.$appearance.sink { [weak self] appearance in
+            self?.statusItem.button?.image = NSImage(systemSymbolName: appearance.symbol, accessibilityDescription: "iDesk")
+            self?.statusItem.button?.contentTintColor = NSColor(appearance.color.color)
+        }.store(in: &cancellables)
         viewModel.$title
             .sink { [weak self] title in self?.show(title) }
             .store(in: &cancellables)
@@ -50,6 +56,9 @@ final class MenuBarController: NSObject, NSMenuDelegate {
                 let space = entry.space
                 let item = LineMenuItem(entry.title) { [weak self] in self?.viewModel.go(to: space) }
                 item.state = space.isCurrent ? .on : .off
+                let appearance = viewModel.appearance(for: space)
+                item.image = NSImage(systemSymbolName: appearance.symbol, accessibilityDescription: nil)?
+                    .withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [NSColor(appearance.color.color)]))
                 menu.addItem(item)
             }
         }
@@ -60,6 +69,12 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         }
 
         menu.addItem(.separator())
+        let search = LineMenuItem(String(localized: "Find Desktop…")) { [weak self] in self?.openDesktopSearch() }
+        search.showShortcut(viewModel.searchShortcut)
+        menu.addItem(search)
+        let previous = LineMenuItem(String(localized: "Previous Desktop")) { [weak self] in self?.viewModel.previousDesktop() }
+        previous.showShortcut(viewModel.previousShortcut)
+        menu.addItem(previous)
         let picker = LineMenuItem(String(localized: "Move a Window…")) { [weak self] in self?.openWindowPicker() }
         picker.showShortcut(viewModel.moveWindowShortcut)
         menu.addItem(picker)
@@ -70,6 +85,12 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         menu.addItem(.separator())
         menu.addItem(desktopActionsMenu())
         menu.addItem(appearanceMenu())
+        let presets = viewModel.presets.suggestions + viewModel.presets.presets
+        menu.addItem(submenu(for: MenuBarViewModel.ChoiceGroup(title: String(localized: "Presets"), choices: presets.map { preset in
+            MenuBarViewModel.Choice(title: preset.name, symbol: "slider.horizontal.3", isSelected: false) { [weak self] in
+                self?.viewModel.applyPreset(preset)
+            }
+        })))
         if let screens = viewModel.screenGroups { menu.addItem(screensMenu(screens)) }
         if viewModel.needsSwitchingPermission {
             menu.addItem(LineMenuItem(String(localized: "Allow Switching Desktops…")) { [weak self] in self?.viewModel.allowSwitching() })

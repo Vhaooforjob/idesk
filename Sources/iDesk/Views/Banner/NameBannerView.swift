@@ -53,6 +53,7 @@ struct NameBannerView: View {
 
     private var board: some View {
         VStack(spacing: 2) {
+            Image(systemName: viewModel.appearance.symbol).foregroundStyle(viewModel.appearance.color.color)
             Text(viewModel.name)
                 .font(.system(size: 30, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
@@ -82,7 +83,8 @@ struct NameBannerView: View {
 
     private var pill: some View {
         HStack(spacing: 10) {
-            Image(systemName: "rectangle.on.rectangle")
+            Image(systemName: viewModel.appearance.symbol)
+                .foregroundStyle(viewModel.appearance.color.color)
                 .font(.system(size: 18, weight: .semibold))
             VStack(alignment: .leading, spacing: 1) {
                 Text(viewModel.name)

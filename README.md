@@ -12,13 +12,16 @@
 
 iDesk is a menu bar app written in Swift with SwiftUI, AppKit, and ScreenCaptureKit, built from the same Capture Line that iSnap uses for screenshots.
 
-## What's new in v1.1.2
+## What's new in v1.2.0
 
-See [release notes](docs/releases/v1.1.2.md) and [CHANGELOG.md](CHANGELOG.md).
+See [release notes](docs/releases/v1.2.0.md) and [CHANGELOG.md](CHANGELOG.md).
 
-- Restore disabled screens before system sleep and retry on wake when the external screen was unplugged while asleep.
-- Pause automatic layout changes during sleep and briefly after wake so the built-in display is not immediately turned off again.
-- Preserve the external-only preference when the selected external screen reconnects.
+- Find desktops by name or number with **⌃⌥S**, and return to the previous desktop on the pointer's display with **⌃⌥P**.
+- Turn **Follow window** off in the window picker to move a window and stay where you are; **⌘← / ⌘→** chooses its destination from the search field.
+- Record shortcuts by pressing keys in **Settings → General**; invalid, duplicate and unavailable shortcuts show an error.
+- Choose each desktop's color and icon in **Settings → Desktops**, shown on the line, menu, search and name banner.
+- Refresh current previews, see capture times, clear saved previews, or keep previews only in memory.
+- Use **Coding**, **Meeting** and **Presenting** presets, or save your own in **Settings → Presets**; apply them from Settings or the menu bar.
 
 ## Highlights
 
@@ -36,7 +39,7 @@ Right-click a card, use the menu bar's **Add Desktop** and **Delete Desktop**, o
 
 ### Move a window to another desktop
 
-Press **⌃⌥M** to open the window picker, or choose **Move a Window…** from the menu bar. Search by application or window title, select a window, choose a destination card, and press **Move and Follow** (Return). Up/Down in the search field selects a window; Esc or the same shortcut closes the popup. The picker lists regular windows on the currently visible desktops, with app icons and titles, and uses saved desktop previews when available. No Screen Recording permission is needed to list windows. Change or clear the shortcut under **Settings → General → Shortcuts → Open window picker**.
+Press **⌃⌥M** to open the window picker, or choose **Move a Window…** from the menu bar. Search by application or window title, select a window, choose a destination card, and press **Move and Follow** (Return). Turn **Follow window** off to use **Move** and stay on the current desktop. From the search field, **⌘← / ⌘→** selects the destination. Up/Down in the search field selects a window; Esc or the same shortcut closes the popup. The picker lists regular windows on the currently visible desktops, with app icons and titles, and uses saved desktop previews when available. No Screen Recording permission is needed to list windows. Change or clear the shortcut under **Settings → General → Shortcuts → Open window picker**.
 
 Select the application window, then **Shift-click** the destination's card on the Desktop Line. iDesk moves that window and follows it to the destination, ready to use. You can also use the menu bar's **Move Window to Desktop** submenu or right-click a card and choose **Move Window Here and Follow**.
 
@@ -88,7 +91,7 @@ macOS has no public API for Spaces, so iDesk works the way other Spaces utilitie
 - **Reading desktops** uses the window server's private `CGSCopyManagedDisplaySpaces` call, the same call iSnap uses to detect full screen apps. It needs no permission.
 - **Names live in iDesk.** They appear in iDesk's line, menu, and banner. Mission Control and the system itself still show "Desktop 1, 2, 3…"; no app can change that.
 - **Switching** presses the Mission Control shortcuts for you, which needs **Accessibility** access. If "Switch to Desktop N" is enabled in System Settings → Keyboard → Keyboard Shortcuts → Mission Control, iDesk jumps straight there; otherwise it walks with ⌃← / ⌃→ (on by default). iDesk reads your actual shortcuts from `com.apple.symbolichotkeys`.
-- **Previews** need **Screen Recording** access (optional). macOS cannot show a desktop you are not on, so each picture is taken at startup, after arriving on that desktop, and when opening the Desktop Line. Repeated requests within five seconds reuse the saved picture; idle desktops are not captured periodically. Visit each desktop once after installing. Without the permission, the wallpaper stands in. iDesk's own windows are left out of the pictures, and the pictures stay on your Mac in `~/Library/Caches/dev.idesk.app`.
+- **Previews** need **Screen Recording** access (optional). macOS cannot show a desktop you are not on, so each picture is taken at startup, after arriving on that desktop, and when opening the Desktop Line. Repeated requests within five seconds reuse the saved picture; idle desktops are not captured periodically. Visit each desktop once after installing. Without the permission, the wallpaper stands in. iDesk's own windows are left out of the pictures, and the pictures stay on your Mac in `~/Library/Caches/dev.idesk.app`. In **Settings → General → Preview Storage**, turn off **Save previews on disk** to remove saved images and keep future previews in RAM only. **Settings → Desktops** shows capture times and offers **Refresh Current Previews** and **Clear Preview Cache**. Refresh only captures desktops currently visible on connected screens.
 
 - **Adding and deleting desktops** uses Mission Control's own buttons through Accessibility (the approach of Hammerspoon's `hs.spaces`): iDesk opens Mission Control for a moment, presses the button, and closes it. If Mission Control does not show its buttons to iDesk, iDesk says so and offers to open Mission Control so you can do it by hand.
 - **Moving a window** reads the focused window through Accessibility and uses private SkyLight calls, including the compatibility-workspace route on macOS 14.5 and later described by [Hammerspoon](https://github.com/Hammerspoon/hammerspoon/blob/master/extensions/spaces/libspaces.m). Symbols are loaded at runtime and the window's Space membership is checked afterward; unsupported systems show an error.

@@ -2,6 +2,8 @@ import SwiftUI
 
 struct WindowPickerView: View {
     @ObservedObject var viewModel: WindowPickerViewModel
+    @ObservedObject var settingsStore: SettingsStore
+    private var follow: Bool { settingsStore.value.followMovedWindow }
     let submit: () -> Void
     let cancel: () -> Void
     let refresh: () -> Void
@@ -28,6 +30,14 @@ struct WindowPickerView: View {
                     .focused($searchFocused)
                     .onKeyPress(.upArrow) { viewModel.stepWindow(-1); return .handled }
                     .onKeyPress(.downArrow) { viewModel.stepWindow(1); return .handled }
+                    .onKeyPress(.leftArrow, phases: .down) { press in
+                        guard press.modifiers.contains(.command) else { return .ignored }
+                        viewModel.stepDestination(-1); return .handled
+                    }
+                    .onKeyPress(.rightArrow, phases: .down) { press in
+                        guard press.modifiers.contains(.command) else { return .ignored }
+                        viewModel.stepDestination(1); return .handled
+                    }
                     .onSubmit { if viewModel.moveRequest != nil { submit() } }
             }
             .padding(10)
@@ -103,11 +113,12 @@ struct WindowPickerView: View {
                 .frame(maxHeight: .infinity)
             }
             Divider()
+            Text("⌘←/→ destination · Return to move · Esc to close").font(.caption).foregroundStyle(.secondary)
             HStack {
-                Text("Return to move · Esc to close").font(.caption).foregroundStyle(.secondary)
+                Toggle("Follow window", isOn: $settingsStore.value.followMovedWindow).toggleStyle(.checkbox)
                 Spacer()
                 Button("Cancel", action: cancel).keyboardShortcut(.cancelAction)
-                Button("Move and Follow", action: submit)
+                Button(follow ? String(localized: "Move and Follow") : String(localized: "Move"), action: submit)
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.defaultAction)
                     .disabled(viewModel.moveRequest == nil)

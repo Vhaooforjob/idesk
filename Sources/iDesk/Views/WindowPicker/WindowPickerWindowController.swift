@@ -4,13 +4,15 @@ import SwiftUI
 @MainActor
 final class WindowPickerWindowController {
     private let desktops: DesktopsViewModel
+    private let settingsStore: SettingsStore
     private let viewModel: WindowPickerViewModel
     private var panel: WindowPickerPanel?
     private var loadTask: Task<Void, Never>?
     private var loadGeneration = 0
     private var isLoading = false
 
-    init(desktops: DesktopsViewModel) {
+    init(desktops: DesktopsViewModel, settingsStore: SettingsStore) {
+        self.settingsStore = settingsStore
         self.desktops = desktops
         viewModel = WindowPickerViewModel(desktops: desktops)
     }
@@ -28,6 +30,7 @@ final class WindowPickerWindowController {
             panel.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
             panel.onClose = { [weak self] in self?.loadTask?.cancel() }
             panel.contentView = NSHostingView(rootView: WindowPickerView(viewModel: viewModel,
+                settingsStore: settingsStore,
                 submit: { [weak self] in self?.submit() }, cancel: { [weak self] in self?.dismiss() },
                 refresh: { [weak self] in self?.reload() }, openAccessibility: { [weak self] in
                     self?.dismiss()
@@ -65,7 +68,8 @@ final class WindowPickerWindowController {
     private func submit() {
         guard panel?.isVisible == true, !isLoading, let request = viewModel.moveRequest else { return }
         dismiss()
-        Task { await desktops.moveWindow(.success(request.window), to: request.destination) }
+        let follow = settingsStore.value.followMovedWindow
+        Task { await desktops.moveWindow(.success(request.window), to: request.destination, follow: follow) }
     }
 }
 

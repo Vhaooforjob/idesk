@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.2.0 — 2026-10-20
+
+- Add desktop search (⌃⌥S) and previous-desktop switching (⌃⌥P), tracked per display.
+- Add Move without Follow and keyboard destination selection to the window picker.
+- Record shortcuts directly and report invalid, duplicate or unavailable combinations.
+- Personalize desktop colors and icons across the line, menu, search and banner.
+- Show preview capture times, refresh current previews, clear the cache and support memory-only storage.
+- Add built-in and saved workspace presets for appearance, line visibility and screen arrangements; preserve display confirmation and recovery.
+- Localize new controls in English and Vietnamese.
+
 ## v1.1.2 — 2026-10-15
 
 - Restore disabled screens before system sleep and retry on wake, including when the external-only screen was unplugged while asleep.

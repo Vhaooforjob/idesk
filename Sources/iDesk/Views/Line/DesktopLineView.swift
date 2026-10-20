@@ -190,7 +190,7 @@ private struct HangingDesktopView: View {
         .overlay {
             if isCurrent {
                 RoundedRectangle(cornerRadius: chrome.radius, style: .continuous)
-                    .strokeBorder(Color.accentColor, lineWidth: 2)
+                    .strokeBorder(item.appearance.color.color, lineWidth: 2)
                     .padding(-1.5)
             }
         }
@@ -229,6 +229,8 @@ private struct HangingDesktopView: View {
 
     private var caption: some View {
         HStack(spacing: 5) {
+            Image(systemName: item.appearance.symbol).foregroundStyle(item.appearance.color.color)
+                .font(.system(size: 10, weight: .semibold))
             if let number = item.space.number {
                 Text("\(number)")
                     .font(.system(size: 9.5, weight: .bold, design: .rounded))

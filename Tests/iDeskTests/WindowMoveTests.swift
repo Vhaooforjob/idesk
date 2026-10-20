@@ -202,6 +202,15 @@ final class WindowMoveViewModelTests: XCTestCase {
         XCTAssertTrue(dialogs.errors.isEmpty)
     }
 
+    func testMoveWithoutFollowingNeverSwitchesOrFocuses() async {
+        switcher.outcome = .noShortcut
+        await viewModel.moveWindow(viewModel.captureWindowForMove(), to: desktop(2), follow: false)
+        XCTAssertEqual(mover.moved.map(\.id), [42])
+        XCTAssertTrue(switcher.visits.isEmpty)
+        XCTAssertTrue(mover.focused.isEmpty)
+        XCTAssertTrue(dialogs.errors.isEmpty)
+    }
+
     func testFailedMoveDoesNotSwitchOrFocus() async {
         let selection = viewModel.captureWindowForMove()
         mover.error = WindowMoveError.refused

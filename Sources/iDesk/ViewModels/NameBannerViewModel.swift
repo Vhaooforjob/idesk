@@ -4,6 +4,7 @@ import Combine
 /// The desktop's name shown for a moment after switching.
 @MainActor
 final class NameBannerViewModel: ObservableObject {
+    @Published private(set) var appearance = DesktopAppearance()
     @Published private(set) var name = ""
     @Published private(set) var subtitle = ""
     @Published private(set) var style: NameBannerStyle = .hangingSign
@@ -35,6 +36,7 @@ final class NameBannerViewModel: ObservableObject {
         guard style != .none, space.kind == .desktop else { return }
         let name = desktops.name(for: space)
         self.name = name
+        appearance = desktops.settings.appearances[space.id] ?? DesktopAppearance()
         subtitle = name == space.defaultName ? "" : space.defaultName
         self.style = style
         screen = DesktopsViewModel.screen(for: space.displayID) ?? SpaceService.screenUnderPointer

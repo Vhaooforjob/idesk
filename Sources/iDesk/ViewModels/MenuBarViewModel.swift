@@ -31,6 +31,8 @@ final class MenuBarViewModel: ObservableObject {
 
     @Published private(set) var title = ""
 
+    let presets: PresetsViewModel
+    @Published private(set) var appearance = DesktopAppearance()
     private let desktops: DesktopsViewModel
     private let line: DesktopLineViewModel
     private let displays: DisplaysViewModel
@@ -40,7 +42,8 @@ final class MenuBarViewModel: ObservableObject {
     private var windowSelection: Result<WindowSelection, Error> = .failure(WindowMoveError.noWindow)
 
     init(desktops: DesktopsViewModel, line: DesktopLineViewModel, displays: DisplaysViewModel,
-         settingsStore: SettingsStore, dialogs: DialogPresenting) {
+         settingsStore: SettingsStore, dialogs: DialogPresenting, presets: PresetsViewModel? = nil) {
+        self.presets = presets ?? PresetsViewModel(store: settingsStore, displays: displays)
         self.desktops = desktops
         self.line = line
         self.displays = displays
@@ -55,6 +58,9 @@ final class MenuBarViewModel: ObservableObject {
     // MARK: Title
 
     func updateTitle() {
+        if let current = desktops.currentSpace(on: NSScreen.main ?? SpaceService.screenUnderPointer) {
+            appearance = settingsStore.value.appearances[current.id] ?? DesktopAppearance()
+        }
         let fresh = Self.title(for: desktops.currentSpace(on: NSScreen.main ?? SpaceService.screenUnderPointer),
                                settings: settingsStore.value)
         if fresh != title { title = fresh }
@@ -137,6 +143,18 @@ final class MenuBarViewModel: ObservableObject {
             }
         )
         return (arrangements, screens, displays.hasScreensOff)
+    }
+
+    func appearance(for space: DesktopSpace) -> DesktopAppearance { settingsStore.value.appearances[space.id] ?? DesktopAppearance() }
+    func previousDesktop() { desktops.goToPreviousDesktop() }
+    var searchShortcut: String { settingsStore.value.searchDesktopsHotkey }
+    var previousShortcut: String { settingsStore.value.previousDesktopHotkey }
+    func applyPreset(_ preset: WorkspacePreset) {
+        presets.apply(preset)
+        if let message = presets.errorMessage {
+            dialogs.showError(String(localized: "Could not apply preset"), NSError(domain: "iDesk", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: message]))
+        }
     }
 
     var needsSwitchingPermission: Bool { !PermissionService.canSwitchDesktops }

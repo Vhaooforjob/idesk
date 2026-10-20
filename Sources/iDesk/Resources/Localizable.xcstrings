@@ -1660,6 +1660,506 @@
           }
         }
       }
+    },
+    "Apply": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áp dụng"
+          }
+        }
+      }
+    },
+    "Blue": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xanh dương"
+          }
+        }
+      }
+    },
+    "Captured %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chụp %@"
+          }
+        }
+      }
+    },
+    "Choose a connected external screen.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy chọn một màn hình ngoài đang kết nối."
+          }
+        }
+      }
+    },
+    "Choose a screen": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn màn hình"
+          }
+        }
+      }
+    },
+    "Clear Preview Cache": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa ảnh xem trước đã lưu"
+          }
+        }
+      }
+    },
+    "Click a shortcut and press keys. Esc cancels; Delete clears it.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bấm vào phím tắt rồi nhấn tổ hợp phím. Esc để hủy; Delete để xóa."
+          }
+        }
+      }
+    },
+    "Coding": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lập trình"
+          }
+        }
+      }
+    },
+    "Color": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Màu"
+          }
+        }
+      }
+    },
+    "Could not apply preset": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể áp dụng cấu hình"
+          }
+        }
+      }
+    },
+    "Could not clear preview cache": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể xóa ảnh xem trước đã lưu"
+          }
+        }
+      }
+    },
+    "Default": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mặc định"
+          }
+        }
+      }
+    },
+    "Delete preset": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa cấu hình"
+          }
+        }
+      }
+    },
+    "Esc cancels. Delete clears the shortcut.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esc để hủy. Delete để xóa phím tắt."
+          }
+        }
+      }
+    },
+    "Find Desktop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm desktop"
+          }
+        }
+      }
+    },
+    "Find Desktop…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm desktop…"
+          }
+        }
+      }
+    },
+    "Follow window": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển theo cửa sổ"
+          }
+        }
+      }
+    },
+    "Green": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xanh lá"
+          }
+        }
+      }
+    },
+    "Icon": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Biểu tượng"
+          }
+        }
+      }
+    },
+    "Keep Current Screens": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giữ màn hình hiện tại"
+          }
+        }
+      }
+    },
+    "Meeting": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Họp"
+          }
+        }
+      }
+    },
+    "Move": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di chuyển"
+          }
+        }
+      }
+    },
+    "No captured preview": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa chụp ảnh xem trước"
+          }
+        }
+      }
+    },
+    "Orange": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cam"
+          }
+        }
+      }
+    },
+    "Pink": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hồng"
+          }
+        }
+      }
+    },
+    "Presenting": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trình chiếu"
+          }
+        }
+      }
+    },
+    "Preset name": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên cấu hình"
+          }
+        }
+      }
+    },
+    "Presets": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cấu hình nhanh"
+          }
+        }
+      }
+    },
+    "Press keys…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhấn tổ hợp phím…"
+          }
+        }
+      }
+    },
+    "Preview Storage": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu ảnh xem trước"
+          }
+        }
+      }
+    },
+    "Previous Desktop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desktop vừa dùng"
+          }
+        }
+      }
+    },
+    "Purple": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tím"
+          }
+        }
+      }
+    },
+    "Ready to Use": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cấu hình có sẵn"
+          }
+        }
+      }
+    },
+    "Record shortcut": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghi phím tắt"
+          }
+        }
+      }
+    },
+    "Red": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đỏ"
+          }
+        }
+      }
+    },
+    "Refresh Current Previews": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chụp lại desktop hiện tại"
+          }
+        }
+      }
+    },
+    "Save Current Setup": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu cấu hình hiện tại"
+          }
+        }
+      }
+    },
+    "Save Preset": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu cấu hình"
+          }
+        }
+      }
+    },
+    "Save previews on disk": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu ảnh xem trước trên ổ đĩa"
+          }
+        }
+      }
+    },
+    "Save the current Look and Desktop Line settings with a screen arrangement.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu giao diện và Desktop Line hiện tại cùng lựa chọn màn hình."
+          }
+        }
+      }
+    },
+    "Search desktops by name or number": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm desktop theo tên hoặc số"
+          }
+        }
+      }
+    },
+    "The preset’s external screen is not connected. No changes were applied.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Màn hình ngoài của cấu hình chưa được kết nối. Chưa áp dụng thay đổi nào."
+          }
+        }
+      }
+    },
+    "The screen change was not kept. No appearance changes were applied.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thay đổi màn hình đã bị hủy. Chưa áp dụng thay đổi giao diện."
+          }
+        }
+      }
+    },
+    "This shortcut could not be registered. Choose another combination.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể đăng ký phím tắt này. Hãy chọn tổ hợp khác."
+          }
+        }
+      }
+    },
+    "This shortcut is used by another iDesk action.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phím tắt này đang dùng cho thao tác khác trong iDesk."
+          }
+        }
+      }
+    },
+    "Turn off to keep previews only in memory and remove saved preview files.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tắt để chỉ giữ ảnh xem trước trong bộ nhớ và xóa ảnh đã lưu trên ổ đĩa."
+          }
+        }
+      }
+    },
+    "Use modifiers and a key": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dùng phím bổ trợ và một phím"
+          }
+        }
+      }
+    },
+    "Your Presets": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cấu hình của bạn"
+          }
+        }
+      }
+    },
+    "↑/↓ select · Return to switch · Esc to close": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "↑/↓ chọn · Return để chuyển · Esc để đóng"
+          }
+        }
+      }
+    },
+    "⌘←/→ destination · Return to move · Esc to close": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⌘←/→ chọn đích · Return để di chuyển · Esc để đóng"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

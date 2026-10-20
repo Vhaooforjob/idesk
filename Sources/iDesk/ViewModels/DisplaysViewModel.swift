@@ -65,9 +65,10 @@ final class DisplaysViewModel: ObservableObject {
 
     // MARK: Intents
 
-    func choose(_ arrangement: DisplayArrangement) {
-        guard let primary = primaryID, let layout = arrangement.layout(for: displays, primary: primary) else { return }
-        apply(layout)
+    @discardableResult
+    func choose(_ arrangement: DisplayArrangement) -> Bool {
+        guard let primary = primaryID, let layout = arrangement.layout(for: displays, primary: primary) else { return false }
+        return apply(layout)
     }
 
     /// Turns one screen on or off; the others stay as they are.
@@ -94,27 +95,31 @@ final class DisplaysViewModel: ObservableObject {
     /// Applies a layout. One that turns a screen off must be confirmed
     /// within a few seconds, or it undoes itself: the dialog may be on a
     /// screen that just went dark.
-    private func apply(_ layout: DisplayLayout) {
+    @discardableResult
+    private func apply(_ layout: DisplayLayout) -> Bool {
         let previous = service.currentLayout
         // Even a no-op choice updates intent: choosing All Screens On while
         // unplugged must cancel a pending external-only restoration.
         guard !layout.enabled.isEmpty else {
-            return dialogs.showError(String(localized: "Could not change the screens"), DisplayError.noScreenLeft)
+            dialogs.showError(String(localized: "Could not change the screens"), DisplayError.noScreenLeft)
+            return false
         }
         do {
             try service.apply(layout)
         } catch {
             // Never leave the screens half changed.
             try? service.recoverAll()
-            return dialogs.showError(String(localized: "Could not change the screens"), error)
+            dialogs.showError(String(localized: "Could not change the screens"), error)
+            return false
         }
         let turnsSomethingOff = !previous.enabled.isSubset(of: layout.enabled)
-        guard turnsSomethingOff, !dialogs.confirmKeepDisplays(seconds: Self.confirmSeconds) else { return }
+        guard turnsSomethingOff, !dialogs.confirmKeepDisplays(seconds: Self.confirmSeconds) else { return true }
         do {
             try service.apply(previous)
         } catch {
             try? service.recoverAll()
             dialogs.showError(String(localized: "Could not change the screens"), error)
         }
+        return false
     }
 }
