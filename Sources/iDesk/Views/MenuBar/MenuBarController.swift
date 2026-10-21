@@ -20,24 +20,44 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         super.init()
 
-        statusItem.button?.image = NSImage(systemSymbolName: "rectangle.on.rectangle", accessibilityDescription: "iDesk")
         let menu = NSMenu()
         menu.delegate = self
         statusItem.menu = menu
 
         viewModel.$appearance.sink { [weak self] appearance in
-            self?.statusItem.button?.image = NSImage(systemSymbolName: appearance.symbol, accessibilityDescription: "iDesk")
-            self?.statusItem.button?.contentTintColor = NSColor(appearance.color.color)
+            guard let button = self?.statusItem.button else { return }
+            Self.configureIcon(of: button, symbol: appearance.symbol)
         }.store(in: &cancellables)
         viewModel.$title
-            .sink { [weak self] title in self?.show(title) }
+            .combineLatest(viewModel.$currentName)
+            .sink { [weak self] title, name in self?.show(title, name: name) }
             .store(in: &cancellables)
     }
 
-    private func show(_ title: String) {
+    /// The icon is a template and the button is never tinted, so the status
+    /// bar picks a legible foreground for its background and highlight
+    /// state, for the icon and for the desktop name beside it. A desktop's
+    /// own color is shown inside iDesk's views, not here.
+    static func configureIcon(of button: NSButton, symbol: String) {
+        let image = NSImage(systemSymbolName: symbol, accessibilityDescription: "iDesk")
+        image?.isTemplate = true
+        button.image = image
+        button.contentTintColor = nil
+    }
+
+    /// Shows the title cut to fit, with the full desktop name as tooltip
+    /// and as the VoiceOver label.
+    static func configureTitle(of button: NSButton, title: String, name: String) {
+        let shown = MenuBarViewModel.shortened(title)
+        button.title = shown.isEmpty ? "" : " \(shown)"
+        button.imagePosition = shown.isEmpty ? .imageOnly : .imageLeading
+        button.toolTip = name.isEmpty ? nil : name
+        button.setAccessibilityLabel(name.isEmpty ? "iDesk" : "iDesk, \(name)")
+    }
+
+    private func show(_ title: String, name: String) {
         guard let button = statusItem.button else { return }
-        button.title = title.isEmpty ? "" : " \(title)"
-        button.imagePosition = title.isEmpty ? .imageOnly : .imageLeading
+        Self.configureTitle(of: button, title: title, name: name)
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
@@ -193,7 +213,9 @@ extension NSMenuItem {
         if shortcut.contains("⌥") { modifiers.insert(.option) }
         if shortcut.contains("⇧") { modifiers.insert(.shift) }
         let key = shortcut.filter { !"⌘⌃⌥⇧".contains($0) }.lowercased()
-        guard !modifiers.isEmpty, key.count == 1 else { return }
+        // Arrows, Tab and Return are special keys in a menu; the hint is
+        // only for plain characters.
+        guard !modifiers.isEmpty, key.count == 1, key.unicodeScalars.allSatisfy(\.isASCII) else { return }
         keyEquivalent = key
         keyEquivalentModifierMask = modifiers
     }

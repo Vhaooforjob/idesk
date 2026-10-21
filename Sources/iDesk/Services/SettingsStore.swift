@@ -18,12 +18,29 @@ final class SettingsStore: ObservableObject {
 
     init(fileURL: URL) {
         self.fileURL = fileURL
-        if let data = try? Data(contentsOf: fileURL),
-           let decoded = try? JSONDecoder().decode(AppSettings.self, from: data) {
-            value = decoded
+        if let data = try? Data(contentsOf: fileURL) {
+            if let decoded = try? JSONDecoder().decode(AppSettings.self, from: data) {
+                value = decoded
+            } else {
+                // Starting from defaults would overwrite the names on the
+                // next save, so keep the unreadable file beside it.
+                Self.keepUnreadableCopy(of: fileURL)
+                value = AppSettings()
+            }
         } else {
             value = AppSettings()
         }
+    }
+
+    /// Where an unreadable settings file is kept: `settings.json.bak`.
+    static func backupURL(for fileURL: URL) -> URL {
+        fileURL.appendingPathExtension("bak")
+    }
+
+    private static func keepUnreadableCopy(of fileURL: URL) {
+        let backup = backupURL(for: fileURL)
+        try? FileManager.default.removeItem(at: backup)
+        try? FileManager.default.moveItem(at: fileURL, to: backup)
     }
 
     func saveNow() throws {

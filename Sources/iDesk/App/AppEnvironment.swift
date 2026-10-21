@@ -31,14 +31,16 @@ final class AppEnvironment {
         displayService = DisplayService()
         self.dialogs = dialogs
 
+        let switcher = SpaceSwitcher(spaces: spaceService)
         desktops = DesktopsViewModel(
             spaceService: spaceService,
             thumbnailStore: thumbnailStore,
             settingsStore: settingsStore,
-            switcher: SpaceSwitcher(spaces: spaceService),
+            switcher: switcher,
             desktopManager: MissionControlService(),
             dialogs: dialogs
         )
+        switcher.onFailure = { [weak desktops] space in desktops?.switchFailed(to: space) }
         line = DesktopLineViewModel(desktops: desktops)
         banner = NameBannerViewModel(desktops: desktops)
         displays = DisplaysViewModel(service: displayService, dialogs: dialogs)

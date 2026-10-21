@@ -1,10 +1,22 @@
 import AppKit
+import Carbon
 import CoreGraphics
 
 /// A keyboard shortcut iDesk can press on the user's behalf.
 struct KeyShortcut: Equatable {
     let keyCode: CGKeyCode
     let flags: CGEventFlags
+
+    /// The modifiers in the form Carbon shortcuts use, without the Fn bit
+    /// macOS adds to arrow keys.
+    var carbonModifiers: UInt32 {
+        var modifiers: UInt32 = 0
+        if flags.contains(.maskControl) { modifiers |= UInt32(controlKey) }
+        if flags.contains(.maskAlternate) { modifiers |= UInt32(optionKey) }
+        if flags.contains(.maskShift) { modifiers |= UInt32(shiftKey) }
+        if flags.contains(.maskCommand) { modifiers |= UInt32(cmdKey) }
+        return modifiers
+    }
 
     func post() {
         let source = CGEventSource(stateID: .hidSystemState)
@@ -57,6 +69,14 @@ enum SymbolicHotkeys {
         return KeyShortcut(keyCode: digitKeyCodes[number - 1], flags: .maskControl)
     }
 
+    /// Every Mission Control shortcut for switching desktops that is on.
+    /// iDesk presses these itself, so an iDesk shortcut on the same keys
+    /// would answer its own presses.
+    static func switching(in table: [String: Any]? = table()) -> [KeyShortcut] {
+        let steps = [move(right: false, in: table), move(right: true, in: table)]
+        return (steps + (1...16).map { desktop($0, in: table) }).compactMap { $0 }
+    }
+
     /// ⌃← and ⌃→ are on unless the user turned them off.
     static func move(right: Bool, in table: [String: Any]? = table()) -> KeyShortcut? {
         let standard = KeyShortcut(keyCode: right ? 124 : 123, flags: [.maskControl, .maskSecondaryFn])
@@ -82,7 +102,14 @@ protocol SpaceSwitching: AnyObject {
 final class SpaceSwitcher: SpaceSwitching {
     enum Outcome { case switching, alreadyThere, needsPermission, noShortcut }
 
+    /// Called when a switch was asked for but the desktop never became
+    /// current: the shortcuts were ignored, or went to another display.
+    var onFailure: ((DesktopSpace) -> Void)?
+
     private let spaces: SpaceService
+    /// The desktop the latest request is heading for, until it arrives or
+    /// the wait for it ends.
+    private var requestedID: String?
     private var targetID: String?
     private var deadline = Date.distantPast
     private var pressesInFlight = 0
@@ -103,14 +130,36 @@ final class SpaceSwitcher: SpaceSwitching {
         if let number = space.number, let shortcut = SymbolicHotkeys.desktop(number) {
             targetID = nil
             shortcut.post()
+            expectArrival(at: space, within: Self.directTimeout)
             return .switching
         }
         guard SymbolicHotkeys.move(right: true) != nil, SymbolicHotkeys.move(right: false) != nil else { return .noShortcut }
         targetID = space.id
         walkedFrom = nil
-        deadline = Date().addingTimeInterval(5)
+        deadline = Date().addingTimeInterval(Self.walkTimeout)
         walk()
+        expectArrival(at: space, within: Self.walkTimeout + 0.5)
         return .switching
+    }
+
+    private static let directTimeout: TimeInterval = 2.5
+    private static let walkTimeout: TimeInterval = 5
+
+    func expectArrival(at space: DesktopSpace, within seconds: TimeInterval) {
+        requestedID = space.id
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { [weak self] in
+            self?.confirmArrival(at: space)
+        }
+    }
+
+    /// Reports a failure unless the desktop is current by now, or a newer
+    /// request has replaced this one.
+    func confirmArrival(at space: DesktopSpace) {
+        guard requestedID == space.id else { return }
+        requestedID = nil
+        spaces.reload()
+        guard let fresh = spaces.spaces.first(where: { $0.id == space.id }), !fresh.isCurrent else { return }
+        onFailure?(fresh)
     }
 
     /// Called after every Space change: keep walking until there.

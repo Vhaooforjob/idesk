@@ -135,6 +135,11 @@ final class DesktopsViewModel {
         }
     }
 
+    /// The switcher pressed the shortcuts but never arrived.
+    func switchFailed(to space: DesktopSpace) {
+        dialogs.showError(String(localized: "Could not switch to “\(name(for: space))”"), SwitchError.didNotArrive)
+    }
+
     func requestSwitchingPermission() {
         guard dialogs.confirmAccessibility() else { return }
         PermissionService.requestSwitchDesktops()
@@ -324,5 +329,13 @@ final class DesktopsViewModel {
     /// "Main", when every display shares the same Spaces.
     static func displayNumber(for displayID: String) -> CGDirectDisplayID? {
         screen(for: displayID)?.displayID
+    }
+}
+
+enum SwitchError: LocalizedError {
+    case didNotArrive
+
+    var errorDescription: String? {
+        String(localized: "macOS did not change desktops. Check that the Mission Control shortcuts in System Settings → Keyboard → Keyboard Shortcuts are on, and that the desktop is on the screen you are using.")
     }
 }

@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.2.1 — 2026-10-21
+
+- Restore the native macOS menu bar foreground for the iDesk icon and desktop name, fixing black text on a light-text menu bar introduced in v1.2.0.
+- Keep custom desktop icons on the menu bar and custom colors inside the desktop menu, line, search and banner.
+- Cut long desktop names in the menu bar to 24 characters; the tooltip and VoiceOver now give the full name.
+- Keep an unreadable `settings.json` as `settings.json.bak` instead of overwriting your desktop names.
+- Report a desktop switch that never arrives, with the likely cause.
+- Stop re-reading desktops every two seconds while the screens sleep.
+- Accept `-`, `` ` ``, arrow, Tab and Return keys in shortcuts, and reject shortcuts macOS uses to switch desktops.
+- Save desktop previews in the background.
+
 ## v1.2.0 — 2026-10-20
 
 - Add desktop search (⌃⌥S) and previous-desktop switching (⌃⌥P), tracked per display.

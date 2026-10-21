@@ -12,9 +12,13 @@
 
 iDesk is a menu bar app written in Swift with SwiftUI, AppKit, and ScreenCaptureKit, built from the same Capture Line that iSnap uses for screenshots.
 
-## What's new in v1.2.0
+## What's new in v1.2.1
 
-See [release notes](docs/releases/v1.2.0.md) and [CHANGELOG.md](CHANGELOG.md).
+See [release notes](docs/releases/v1.2.1.md) and [CHANGELOG.md](CHANGELOG.md).
+
+The menu bar icon and desktop name follow the native macOS foreground color again, fixing the black foreground introduced in v1.2.0. Custom desktop colors remain inside the menu and other iDesk views. Long names are cut in the menu bar (the tooltip shows the whole name), an unreadable settings file is kept as `settings.json.bak`, a desktop switch that never arrives is reported, and shortcuts accept `-`, `` ` ``, arrows, Tab and Return.
+
+Also included from v1.2.0:
 
 - Find desktops by name or number with **⌃⌥S**, and return to the previous desktop on the pointer's display with **⌃⌥P**.
 - Turn **Follow window** off in the window picker to move a window and stay where you are; **⌘← / ⌘→** chooses its destination from the search field.

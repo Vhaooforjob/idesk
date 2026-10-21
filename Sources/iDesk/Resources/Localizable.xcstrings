@@ -2160,6 +2160,36 @@
           }
         }
       }
+    },
+    "Could not switch to “%@”": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể chuyển tới “%@”"
+          }
+        }
+      }
+    },
+    "macOS did not change desktops. Check that the Mission Control shortcuts in System Settings → Keyboard → Keyboard Shortcuts are on, and that the desktop is on the screen you are using.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS không đổi desktop. Hãy kiểm tra các phím tắt Mission Control trong Cài đặt hệ thống → Bàn phím → Phím tắt bàn phím đã bật, và desktop đó nằm trên màn hình bạn đang dùng."
+          }
+        }
+      }
+    },
+    "macOS uses this shortcut to switch desktops. Choose another combination.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS dùng phím tắt này để chuyển desktop. Hãy chọn tổ hợp khác."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

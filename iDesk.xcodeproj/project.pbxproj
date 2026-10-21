@@ -14,6 +14,7 @@
 		1CC29228ED5D2FFBCB78D8DB /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6359D40E4C7E242025F75723 /* SettingsView.swift */; };
 		1DF0AB100D29A3FDD33F0567 /* DesktopAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED38D261E8E81D5EC9B822CC /* DesktopAppearance.swift */; };
 		1EC90A736D9CF45F2430B1FB /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ACF8B52CEA387665BE61DAF /* MenuBarController.swift */; };
+		2570E549A240AAD556309890 /* PolishTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B97096C761FA4A5234A75B /* PolishTests.swift */; };
 		2BF139C6046DA95425D01B1D /* WindowPickerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 214C03DAA87A83F5DE57695C /* WindowPickerTests.swift */; };
 		2C1A2A57F63816AC28FF3F81 /* PermissionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B28030487776378B0A30828 /* PermissionService.swift */; };
 		3369949D8F0EE4FBC1CB7EBF /* MenuBarViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6146540D4435868FCE474E /* MenuBarViewModel.swift */; };
@@ -117,6 +118,7 @@
 		9E0AA044D9D15F9D4099FB72 /* HangingDesktop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HangingDesktop.swift; sourceTree = "<group>"; };
 		A06F0A0E3CFCB0C9738DA0C5 /* DesktopLineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopLineView.swift; sourceTree = "<group>"; };
 		A71BFFBB494638C4A9C7F249 /* iDesk.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iDesk.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A7B97096C761FA4A5234A75B /* PolishTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolishTests.swift; sourceTree = "<group>"; };
 		A9896F293510698889F9EAE8 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
 		AE6DB8BC75FFCE7684339CA3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		B4E4A90BB8C70D7A26228747 /* ShortcutRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutRecorder.swift; sourceTree = "<group>"; };
@@ -160,6 +162,7 @@
 				0C4AC093DFB923C35CE98939 /* EnhancementShotsTests.swift */,
 				8125AC589076EDA8F3D70E57 /* EnhancementTests.swift */,
 				1D10503EF90AB11B89B40CE2 /* ModelTests.swift */,
+				A7B97096C761FA4A5234A75B /* PolishTests.swift */,
 				8093E45CB3BD34EBA1E7B456 /* StyleShotsTests.swift */,
 				D6F78E2987AF4918DF67F5A3 /* ViewModelTests.swift */,
 				1BBAFBE2D57C4B76A0903122 /* WindowMoveTests.swift */,
@@ -486,6 +489,7 @@
 				B1E30A350465212FEC80FEC1 /* EnhancementShotsTests.swift in Sources */,
 				04A400AF33322A0A59ED4F51 /* EnhancementTests.swift in Sources */,
 				E69D3E2F027C4FC88F8E7DF7 /* ModelTests.swift in Sources */,
+				2570E549A240AAD556309890 /* PolishTests.swift in Sources */,
 				F395388399715D59B5B542C3 /* StyleShotsTests.swift in Sources */,
 				B813B76CE5498A51BECDE857 /* ViewModelTests.swift in Sources */,
 				C7A9D0DD9B0AD95F85934C80 /* WindowMoveTests.swift in Sources */,

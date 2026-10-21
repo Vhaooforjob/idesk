@@ -219,6 +219,7 @@ final class EnhancementTests: XCTestCase {
             await fulfillment(of: [ready], timeout: 2)
         }
         await capture()
+        store.flushWrites()
         let file = folder.appendingPathComponent("S1.jpg")
         XCTAssertTrue(FileManager.default.fileExists(atPath: file.path))
         XCTAssertNotNil(store.dates["S1"])

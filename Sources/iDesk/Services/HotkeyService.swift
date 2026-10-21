@@ -82,12 +82,16 @@ final class HotkeyService: ObservableObject {
         references.append(reference)
     }
 
-    static func validationErrors(_ shortcuts: [Action: String]) -> [Action: String] {
+    static func validationErrors(_ shortcuts: [Action: String], reserved: [KeyShortcut] = SymbolicHotkeys.switching()) -> [Action: String] {
         var errors: [Action: String] = [:]
         var owners: [String: [Action]] = [:]
         for (action, value) in shortcuts where !value.isEmpty {
             guard let parsed = parse(value) else {
                 errors[action] = String(localized: "Use modifiers and one key, for example ⌃⌥M.")
+                continue
+            }
+            if reserved.contains(where: { UInt32($0.keyCode) == parsed.keyCode && $0.carbonModifiers == parsed.modifiers }) {
+                errors[action] = String(localized: "macOS uses this shortcut to switch desktops. Choose another combination.")
                 continue
             }
             owners["\(parsed.keyCode):\(parsed.modifiers)", default: []].append(action)
@@ -110,7 +114,18 @@ final class HotkeyService: ObservableObject {
 
     /// Reads shortcuts written like "⌃⌥D" or "ctrl+option+D".
     static func parse(_ value: String) -> (keyCode: UInt32, modifiers: UInt32)? {
-        let tokens = value
+        var text = value
+        var key: String?
+        // "-" also separates words ("ctrl-option-M"), so it is the minus key
+        // only at the very end, straight after a modifier or a separator.
+        if text.hasSuffix("-") {
+            let head = text.dropLast()
+            if head.isEmpty || head.last.map({ "⌘⌃⌥⇧+- \t".contains($0) }) == true {
+                key = "-"
+                text = String(head)
+            }
+        }
+        let tokens = text
             .replacingOccurrences(of: "⌘", with: " cmd ")
             .replacingOccurrences(of: "⌃", with: " ctrl ")
             .replacingOccurrences(of: "⌥", with: " option ")
@@ -118,7 +133,6 @@ final class HotkeyService: ObservableObject {
             .components(separatedBy: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "+-")))
             .filter { !$0.isEmpty }
         var modifiers: UInt32 = 0
-        var key: String?
         for token in tokens {
             switch token.lowercased() {
             case "cmd", "command": modifiers |= UInt32(cmdKey)
@@ -130,7 +144,7 @@ final class HotkeyService: ObservableObject {
                 key = token.uppercased()
             }
         }
-        guard modifiers & UInt32(cmdKey | controlKey | optionKey) != 0, let key, let keyCode = keyCodes[key] else { return nil }
+        guard modifiers & UInt32(cmdKey | controlKey | optionKey) != 0, let key, let keyCode = keyCodes[key] ?? aliases[key] else { return nil }
         return (keyCode, modifiers)
     }
 
@@ -142,6 +156,13 @@ final class HotkeyService: ObservableObject {
         "[": 33, "I": 34, "P": 35, "L": 37, "J": 38, "'": 39, "K": 40, ";": 41,
         "\\": 42, ",": 43, "/": 44, "N": 45, "M": 46, ".": 47, "SPACE": 49,
         "F1": 122, "F2": 120, "F3": 99, "F4": 118, "F5": 96, "F6": 97,
-        "F7": 98, "F8": 100, "F9": 101, "F10": 109, "F11": 103, "F12": 111
+        "F7": 98, "F8": 100, "F9": 101, "F10": 109, "F11": 103, "F12": 111,
+        "-": 27, "`": 50, "←": 123, "→": 124, "↓": 125, "↑": 126, "⇥": 48, "↩": 36
+    ]
+
+    /// Other ways to write the keys above, accepted when reading but never
+    /// used when recording.
+    private static let aliases: [String: UInt32] = [
+        "LEFT": 123, "RIGHT": 124, "DOWN": 125, "UP": 126, "TAB": 48, "RETURN": 36, "ENTER": 36
     ]
 }

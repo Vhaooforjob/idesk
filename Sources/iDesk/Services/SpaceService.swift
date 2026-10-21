@@ -12,7 +12,8 @@ private func CGSCopyManagedDisplaySpaces(_ connection: Int32) -> CFArray
 
 /// Keeps an up-to-date list of Spaces. macOS announces a switch, but not a
 /// desktop being added, removed or reordered in Mission Control, so the list
-/// is also re-read every couple of seconds; the call is cheap.
+/// is also re-read every couple of seconds while the screens are awake; the
+/// call is cheap, but there is nothing to see while they sleep.
 @MainActor
 final class SpaceService: ObservableObject {
     @Published private(set) var spaces: [DesktopSpace] = []
@@ -21,8 +22,10 @@ final class SpaceService: ObservableObject {
     var onActiveSpaceChange: (() -> Void)?
 
     private let read: () -> [DesktopSpace]
-    private var observer: NSObjectProtocol?
+    private var observers: [NSObjectProtocol] = []
     private var timer: Timer?
+
+    var isPolling: Bool { timer != nil }
 
     /// - Parameter read: where the Spaces come from; the window server by
     ///   default, a fixed list in tests.
@@ -31,27 +34,47 @@ final class SpaceService: ObservableObject {
     }
 
     func start() {
-        guard observer == nil else { return }
-        reload()
-        observer = NSWorkspace.shared.notificationCenter.addObserver(
+        guard observers.isEmpty else { return }
+        let center = NSWorkspace.shared.notificationCenter
+        observers.append(center.addObserver(
             forName: NSWorkspace.activeSpaceDidChangeNotification, object: nil, queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 self?.reload()
                 self?.onActiveSpaceChange?()
             }
-        }
+        })
+        observers.append(center.addObserver(forName: NSWorkspace.screensDidSleepNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.pausePolling() }
+        })
+        observers.append(center.addObserver(forName: NSWorkspace.screensDidWakeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.resumePolling() }
+        })
+        resumePolling()
+    }
+
+    deinit {
+        timer?.invalidate()
+        for observer in observers { NSWorkspace.shared.notificationCenter.removeObserver(observer) }
+    }
+
+    /// Stops the periodic re-read, for while the screens sleep.
+    func pausePolling() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    /// Starts the periodic re-read, after one now to catch up with whatever
+    /// changed while it was paused.
+    func resumePolling() {
+        guard timer == nil else { return }
+        reload()
         let timer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.reload() }
         }
         timer.tolerance = 0.5
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
-    }
-
-    deinit {
-        timer?.invalidate()
-        if let observer { NSWorkspace.shared.notificationCenter.removeObserver(observer) }
     }
 
     func reload() {

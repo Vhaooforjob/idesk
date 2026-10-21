@@ -17,6 +17,9 @@ final class ThumbnailStore: ObservableObject {
     @Published private(set) var dates: [String: Date] = [:]
     private(set) var storesOnDisk: Bool
     private var generation = 0
+    /// Encoding and writing a picture takes a moment, so it happens here,
+    /// one file at a time and in order, instead of on the main thread.
+    private let writer = DispatchQueue(label: "dev.idesk.thumbnail-writer", qos: .utility)
 
     static let width = 480
     private let folder: URL
@@ -89,11 +92,21 @@ final class ThumbnailStore: ObservableObject {
         if !enabled { try removeSaved() }
     }
 
+    /// Waits until every picture handed over so far is on disk.
+    func flushWrites() {
+        writer.sync {}
+    }
+
+    /// Runs behind any write still queued, so a picture cannot reappear
+    /// after it was removed.
     private func removeSaved() throws {
-        guard FileManager.default.fileExists(atPath: folder.path) else { return }
-        for file in try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
-            where file.pathExtension == "jpg" {
-            try FileManager.default.removeItem(at: file)
+        let folder = folder
+        try writer.sync {
+            guard FileManager.default.fileExists(atPath: folder.path) else { return }
+            for file in try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
+                where file.pathExtension == "jpg" {
+                try FileManager.default.removeItem(at: file)
+            }
         }
     }
 
@@ -116,7 +129,8 @@ final class ThumbnailStore: ObservableObject {
         capturedAt = capturedAt.filter { ids.contains($0.key.spaceID) }
         for id in images.keys where !ids.contains(id) {
             images[id] = nil
-            try? FileManager.default.removeItem(at: url(for: id))
+            let file = url(for: id)
+            writer.async { try? FileManager.default.removeItem(at: file) }
         }
     }
 
@@ -134,13 +148,17 @@ final class ThumbnailStore: ObservableObject {
     private func store(_ image: CGImage, for id: String) {
         images[id] = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
         guard storesOnDisk else { return }
-        let rep = NSBitmapImageRep(cgImage: image)
-        guard let data = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.82]) else { return }
-        do {
-            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-            try data.write(to: url(for: id), options: .atomic)
-        } catch {
-            log.error("Could not save thumbnail: \(error.localizedDescription, privacy: .public)")
+        let folder = folder
+        let file = url(for: id)
+        writer.async {
+            let rep = NSBitmapImageRep(cgImage: image)
+            guard let data = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.82]) else { return }
+            do {
+                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                try data.write(to: file, options: .atomic)
+            } catch {
+                log.error("Could not save thumbnail: \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 

@@ -30,6 +30,11 @@ final class MenuBarViewModel: ObservableObject {
     }
 
     @Published private(set) var title = ""
+    /// The current desktop's full name, for the tooltip and VoiceOver, even
+    /// when the title shows only the icon or is shortened.
+    @Published private(set) var currentName = ""
+    /// The longest title the menu bar item shows before cutting it with "…".
+    nonisolated static let titleLimit = 24
 
     let presets: PresetsViewModel
     @Published private(set) var appearance = DesktopAppearance()
@@ -58,12 +63,21 @@ final class MenuBarViewModel: ObservableObject {
     // MARK: Title
 
     func updateTitle() {
-        if let current = desktops.currentSpace(on: NSScreen.main ?? SpaceService.screenUnderPointer) {
+        let current = desktops.currentSpace(on: NSScreen.main ?? SpaceService.screenUnderPointer)
+        if let current {
             appearance = settingsStore.value.appearances[current.id] ?? DesktopAppearance()
         }
-        let fresh = Self.title(for: desktops.currentSpace(on: NSScreen.main ?? SpaceService.screenUnderPointer),
-                               settings: settingsStore.value)
+        let fresh = Self.title(for: current, settings: settingsStore.value)
         if fresh != title { title = fresh }
+        let name = current.map { settingsStore.value.name(for: $0) } ?? ""
+        if name != currentName { currentName = name }
+    }
+
+    /// A long name would push the item into the notch or over other menu
+    /// bar icons, so the menu bar shows it cut and the tooltip shows it all.
+    nonisolated static func shortened(_ title: String, limit: Int = titleLimit) -> String {
+        guard limit > 1, title.count > limit else { return title }
+        return String(title.prefix(limit - 1)).trimmingCharacters(in: .whitespaces) + "…"
     }
 
     static func title(for space: DesktopSpace?, settings: AppSettings) -> String {
