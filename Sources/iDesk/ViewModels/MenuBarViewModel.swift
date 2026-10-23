@@ -41,13 +41,16 @@ final class MenuBarViewModel: ObservableObject {
     private let desktops: DesktopsViewModel
     private let line: DesktopLineViewModel
     private let displays: DisplaysViewModel
+    let tuning: ScreenTuningViewModel?
     private let settingsStore: SettingsStore
     private let dialogs: DialogPresenting
     private var cancellables: Set<AnyCancellable> = []
     private var windowSelection: Result<WindowSelection, Error> = .failure(WindowMoveError.noWindow)
 
     init(desktops: DesktopsViewModel, line: DesktopLineViewModel, displays: DisplaysViewModel,
-         settingsStore: SettingsStore, dialogs: DialogPresenting, presets: PresetsViewModel? = nil) {
+         settingsStore: SettingsStore, dialogs: DialogPresenting, presets: PresetsViewModel? = nil,
+         tuning: ScreenTuningViewModel? = nil) {
+        self.tuning = tuning
         self.presets = presets ?? PresetsViewModel(store: settingsStore, displays: displays)
         self.desktops = desktops
         self.line = line
@@ -99,6 +102,10 @@ final class MenuBarViewModel: ObservableObject {
         windowSelection = desktops.captureWindowForMove()
         desktops.reload()
         displays.refresh()
+        if let tuning {
+            tuning.refreshNightShift()
+            Task { await tuning.reload() }
+        }
         updateTitle()
     }
 
@@ -180,6 +187,7 @@ final class MenuBarViewModel: ObservableObject {
     var renameShortcut: String { settingsStore.value.renameHotkey }
     var moveWindowShortcut: String { settingsStore.value.moveWindowHotkey }
     var toggleShortcut: String { settingsStore.value.toggleLineHotkey }
+    var nightShiftShortcut: String { settingsStore.value.nightShiftHotkey }
 
     var choiceGroups: [ChoiceGroup] {
         let settings = settingsStore.value

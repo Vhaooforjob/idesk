@@ -30,6 +30,7 @@ final class SettingsViewModel: ObservableObject {
     let preview: DesktopLineViewModel
     /// The Screens tab.
     let screens: DisplaysViewModel
+    let tuning: ScreenTuningViewModel?
 
     @Published private(set) var shortcutErrors: [HotkeyService.Action: String] = [:]
     @Published private(set) var previewError: String?
@@ -44,7 +45,8 @@ final class SettingsViewModel: ObservableObject {
     private let desktops: DesktopsViewModel
     private var cancellables: Set<AnyCancellable> = []
 
-    init(settingsStore: SettingsStore, desktops: DesktopsViewModel, screens: DisplaysViewModel, hotkeys: HotkeyService? = nil, presets: PresetsViewModel? = nil, windowRules: WindowRuleService? = nil, contextPresets: ContextPresetService? = nil, updates: UpdateService? = nil) {
+    init(settingsStore: SettingsStore, desktops: DesktopsViewModel, screens: DisplaysViewModel, hotkeys: HotkeyService? = nil, presets: PresetsViewModel? = nil, windowRules: WindowRuleService? = nil, contextPresets: ContextPresetService? = nil, updates: UpdateService? = nil, tuning: ScreenTuningViewModel? = nil) {
+        self.tuning = tuning
         self.contextPresets = contextPresets
         self.updates = updates ?? UpdateService()
         self.settingsStore = settingsStore

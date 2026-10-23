@@ -118,6 +118,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             }
         })))
         if let screens = viewModel.screenGroups { menu.addItem(screensMenu(screens)) }
+        if let tuning = viewModel.tuning, !tuning.screens.isEmpty || tuning.hasNightShift { menu.addItem(tuningMenu(tuning)) }
         if viewModel.needsSwitchingPermission {
             menu.addItem(LineMenuItem(String(localized: "Allow Switching Desktops…")) { [weak self] in self?.viewModel.allowSwitching() })
         }
@@ -192,6 +193,41 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         return item
     }
 
+    /// A brightness and a warmth slider for each external screen, and the
+    /// Night Shift switch.
+    private func tuningMenu(_ tuning: ScreenTuningViewModel) -> NSMenuItem {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        for (index, screen) in tuning.screens.enumerated() {
+            if index > 0 { menu.addItem(.separator()) }
+            let header = NSMenuItem(title: screen.name, action: nil, keyEquivalent: "")
+            header.isEnabled = false
+            menu.addItem(header)
+            let brightness = NSMenuItem()
+            brightness.view = MenuSliderView(
+                title: String(localized: "Brightness"), low: "sun.min", high: "sun.max", value: screen.brightness,
+                range: screen.brightnessRange
+            ) { [weak tuning] in tuning?.setBrightness($0, for: screen.id) }
+            menu.addItem(brightness)
+            let warmth = NSMenuItem()
+            warmth.view = MenuSliderView(
+                title: String(localized: "Warmth"), low: "snowflake", high: "flame", value: screen.warmth, range: 0...1
+            ) { [weak tuning] in tuning?.setWarmth($0, for: screen.id) }
+            menu.addItem(warmth)
+        }
+        if tuning.hasNightShift {
+            if !tuning.screens.isEmpty { menu.addItem(.separator()) }
+            let night = LineMenuItem(String(localized: "Night Shift (All Screens)")) { [weak tuning] in
+                tuning?.setNightShift(!(tuning?.nightShift?.isOn ?? false))
+            }
+            night.state = tuning.nightShift?.isOn == true ? .on : .off
+            night.showShortcut(viewModel.nightShiftShortcut)
+            night.image = NSImage(systemSymbolName: "moon.fill", accessibilityDescription: nil)
+            menu.addItem(night)
+        }
+        return groupItem(String(localized: "Brightness and Color"), menu: menu)
+    }
+
     /// A submenu of mutually exclusive options with the current one ticked.
     private func submenu(for group: MenuBarViewModel.ChoiceGroup) -> NSMenuItem {
         let submenu = NSMenu()
@@ -207,6 +243,56 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         item.submenu = submenu
         return item
     }
+}
+
+/// A menu row with a title and a slider between two symbols. The slider
+/// reports every change while it is dragged.
+final class MenuSliderView: NSView {
+    private let slider: NSSlider
+    private let onChange: (Double) -> Void
+
+    init(title: String, low: String, high: String, value: Double, range: ClosedRange<Double>,
+         onChange: @escaping (Double) -> Void) {
+        self.onChange = onChange
+        slider = NSSlider(value: value, minValue: range.lowerBound, maxValue: range.upperBound, target: nil, action: nil)
+        super.init(frame: NSRect(x: 0, y: 0, width: 240, height: 44))
+        slider.target = self
+        slider.action = #selector(changed)
+        slider.isContinuous = true
+        slider.setAccessibilityLabel(title)
+
+        let label = NSTextField(labelWithString: title)
+        label.font = .menuFont(ofSize: NSFont.smallSystemFontSize)
+        label.textColor = .secondaryLabelColor
+        let lowIcon = Self.icon(low)
+        let highIcon = Self.icon(high)
+        let row = NSStackView(views: [lowIcon, slider, highIcon])
+        row.spacing = 6
+        let column = NSStackView(views: [label, row])
+        column.orientation = .vertical
+        column.alignment = .leading
+        column.spacing = 2
+        column.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(column)
+        NSLayoutConstraint.activate([
+            column.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14),
+            column.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14),
+            column.centerYAnchor.constraint(equalTo: centerYAnchor),
+            row.leadingAnchor.constraint(equalTo: column.leadingAnchor),
+            row.trailingAnchor.constraint(equalTo: column.trailingAnchor)
+        ])
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    private static func icon(_ symbol: String) -> NSImageView {
+        let view = NSImageView(image: NSImage(systemSymbolName: symbol, accessibilityDescription: nil) ?? NSImage())
+        view.contentTintColor = .secondaryLabelColor
+        view.setContentHuggingPriority(.required, for: .horizontal)
+        return view
+    }
+
+    @objc private func changed() { onChange(slider.doubleValue) }
 }
 
 extension NSMenuItem {

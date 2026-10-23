@@ -12,6 +12,15 @@
 
 iDesk is a menu bar app written in Swift with SwiftUI, AppKit, and ScreenCaptureKit, built from the same Capture Line that iSnap uses for screenshots.
 
+## What's new in v1.3.1
+
+See [release notes](docs/releases/v1.3.1.md) and [download v1.3.1](https://github.com/Vhaooforjob/idesk/releases/tag/v1.3.1).
+
+- **Brightness and warmth per external screen:** sliders in **Settings → Screens** and under **Brightness and Color** in the menu bar. Brightness changes the screen's own backlight over DDC/CI when the screen answers (Apple Silicon), and otherwise darkens the picture with a gamma table. Warmth always tints with a gamma table, so it works on every screen. Levels are remembered per screen.
+- **Night Shift switch:** in the same menu and tab. It is one macOS setting for every screen, and some external screens do not show it.
+- **Shortcuts:** `⌃⌥↑` / `⌃⌥↓` brighten or dim the external screen under the pointer by 5%; `⌃⌥N` turns Night Shift on or off.
+- DDC/CI and Night Shift use private macOS calls, resolved at runtime. If macOS removes them, brightness falls back to software dimming and the Night Shift switch is hidden.
+
 ## What's new in v1.3.0
 
 See [release notes](docs/releases/v1.3.0.md) and [download v1.3.0](https://github.com/Vhaooforjob/idesk/releases/tag/v1.3.0).
@@ -109,6 +118,10 @@ To reduce background power use, pointer tracking reacts to mouse events, and win
 - Multiple displays, with or without "Displays have separate Spaces"
 - English and Tiếng Việt interface, launch at login, optional switch sound
 
+### Brightness and color of external screens
+
+**Settings → Screens** and the menu bar's **Brightness and Color** submenu give each external screen a **Brightness** and a **Warmth** slider, and one **Night Shift** switch. Brightness is the screen's own backlight when it answers DDC/CI; a screen, cable or dock that does not pass DDC through gets a software dimmer instead (it never goes below 10%, so a slider cannot leave the screen black, and the screen's own brightness should stay high). Warmth lowers blue and a little green with a gamma table and lasts while iDesk runs; quitting iDesk gives the colors back. Night Shift is one macOS setting for every screen, and some external screens do not show it, so use Warmth to tint a single screen. `⌃⌥↑` / `⌃⌥↓` change the brightness of the external screen under the pointer and `⌃⌥N` flips Night Shift; record other combinations in **Settings → General → Shortcuts**.
+
 ## How it works, and its limits
 
 macOS has no public API for Spaces, so iDesk works the way other Spaces utilities do:
@@ -120,6 +133,7 @@ macOS has no public API for Spaces, so iDesk works the way other Spaces utilitie
 
 - **Adding and deleting desktops** uses Mission Control's own buttons through Accessibility (the approach of Hammerspoon's `hs.spaces`): iDesk opens Mission Control for a moment, presses the button, and closes it. If Mission Control does not show its buttons to iDesk, iDesk says so and offers to open Mission Control so you can do it by hand.
 - **Moving a window** reads the focused window through Accessibility and uses private SkyLight calls, including the compatibility-workspace route on macOS 14.5 and later described by [Hammerspoon](https://github.com/Hammerspoon/hammerspoon/blob/master/extensions/spaces/libspaces.m). Symbols are loaded at runtime and the window's Space membership is checked afterward; unsupported systems show an error.
+- **Screen brightness** talks DDC/CI through the private `IOAVService` calls on Apple Silicon and **Night Shift** uses the private `CBBlueLightClient`; both are looked up at runtime, so macOS can remove them without breaking iDesk. Because of these private calls, iDesk is distributed here and not on the Mac App Store.
 - **Turning a screen off** uses the window server's private `CGSConfigureDisplayEnabled`, as display utilities do; every change lasts for the login session only.
 
 ## Requirements

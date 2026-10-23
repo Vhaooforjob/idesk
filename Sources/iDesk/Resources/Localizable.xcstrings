@@ -3670,6 +3670,146 @@
           }
         }
       }
+    },
+    "Brightness": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Độ sáng"
+          }
+        }
+      }
+    },
+    "Warmth": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Độ ấm màu"
+          }
+        }
+      }
+    },
+    "Reset Colors": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đặt lại màu"
+          }
+        }
+      }
+    },
+    "Night Shift": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Night Shift"
+          }
+        }
+      }
+    },
+    "Night Shift (All Screens)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Night Shift (mọi màn hình)"
+          }
+        }
+      }
+    },
+    "Brightness and Color": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Độ sáng và màu"
+          }
+        }
+      }
+    },
+    "Brightness changes the screen's own backlight. Warmth tints the picture and lasts while iDesk runs.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Độ sáng chỉnh đèn nền thật của màn hình. Độ ấm màu chỉ phủ màu lên hình và có tác dụng khi iDesk đang chạy."
+          }
+        }
+      }
+    },
+    "This screen does not accept brightness commands (some cables and docks do not pass them), so iDesk darkens the picture instead. Keep the screen's own brightness high. Warmth tints the picture and lasts while iDesk runs.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Màn hình này không nhận lệnh chỉnh độ sáng (một số cáp và dock không chuyển lệnh này), nên iDesk làm tối hình thay thế. Hãy để độ sáng của chính màn hình ở mức cao. Độ ấm màu chỉ phủ màu lên hình và có tác dụng khi iDesk đang chạy."
+          }
+        }
+      }
+    },
+    "Night Shift is one macOS setting for every screen. Some external screens do not show it. Use Warmth above to tint a single screen.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Night Shift là một cài đặt chung của macOS cho mọi màn hình. Một số màn hình ngoài không hiển thị hiệu ứng này. Dùng Độ ấm màu ở trên để chỉnh riêng một màn hình."
+          }
+        }
+      }
+    },
+    "Could not change Night Shift": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không đổi được Night Shift"
+          }
+        }
+      }
+    },
+    "macOS did not accept the change. It may be following its schedule.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS không nhận thay đổi này. Có thể Night Shift đang chạy theo lịch."
+          }
+        }
+      }
+    },
+    "Brighten the screen under the pointer": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tăng độ sáng màn hình đang trỏ chuột"
+          }
+        }
+      }
+    },
+    "Dim the screen under the pointer": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giảm độ sáng màn hình đang trỏ chuột"
+          }
+        }
+      }
+    },
+    "Turn Night Shift on or off": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật hoặc tắt Night Shift"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

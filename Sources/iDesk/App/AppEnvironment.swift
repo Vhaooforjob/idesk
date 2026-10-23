@@ -17,6 +17,7 @@ final class AppEnvironment {
     let banner: NameBannerViewModel
     let menuBar: MenuBarViewModel
     let displays: DisplaysViewModel
+    let screenTuning: ScreenTuningViewModel
     var showWindowPicker: (() -> Void)?
     var showDesktopSearch: (() -> Void)?
     let presets: PresetsViewModel
@@ -49,6 +50,7 @@ final class AppEnvironment {
         line = DesktopLineViewModel(desktops: desktops)
         banner = NameBannerViewModel(desktops: desktops)
         displays = DisplaysViewModel(service: displayService, dialogs: dialogs)
+        screenTuning = ScreenTuningViewModel(displays: displays, settingsStore: settingsStore, system: LiveScreenTuningSystem(), dialogs: dialogs)
         presets = PresetsViewModel(store: settingsStore, displays: displays, sessions: WorkspaceSessionService(desktops: desktops))
         windowRules = WindowRuleService(store: settingsStore, desktops: desktops, suspended: { [weak presets] in
             presets?.isApplying == true || presets?.isSaving == true
@@ -57,11 +59,11 @@ final class AppEnvironment {
         presets.onSessionError = { [dialogs] message in
             dialogs.showError(String(localized: "Some session items could not be restored"), WorkspaceFeatureError(message: message))
         }
-        menuBar = MenuBarViewModel(desktops: desktops, line: line, displays: displays, settingsStore: settingsStore, dialogs: dialogs, presets: presets)
+        menuBar = MenuBarViewModel(desktops: desktops, line: line, displays: displays, settingsStore: settingsStore, dialogs: dialogs, presets: presets, tuning: screenTuning)
     }
 
     func makeSettingsViewModel() -> SettingsViewModel {
-        SettingsViewModel(settingsStore: settingsStore, desktops: desktops, screens: displays, hotkeys: hotkeys, presets: presets, windowRules: windowRules, contextPresets: contextPresets, updates: updates)
+        SettingsViewModel(settingsStore: settingsStore, desktops: desktops, screens: displays, hotkeys: hotkeys, presets: presets, windowRules: windowRules, contextPresets: contextPresets, updates: updates, tuning: screenTuning)
     }
 
     func start() {
@@ -70,6 +72,7 @@ final class AppEnvironment {
         desktops.start()
         windowRules.start()
         contextPresets.start()
+        screenTuning.start()
         WorkspaceShortcuts.updateAppShortcutParameters()
         settingsStore.$value.map(\.storesPreviewsOnDisk).removeDuplicates()
             .sink { [weak self] enabled in
@@ -98,6 +101,9 @@ final class AppEnvironment {
             case .searchDesktops: self?.showDesktopSearch?()
             case .previousDesktop: self?.desktops.goToPreviousDesktop()
             case .undoMove: Task { await self?.desktops.undoLastMove() }
+            case .brightnessUp: self?.screenTuning.nudgeBrightness(by: ScreenTuningViewModel.keyStep, near: SpaceService.screenUnderPointer?.displayID)
+            case .brightnessDown: self?.screenTuning.nudgeBrightness(by: -ScreenTuningViewModel.keyStep, near: SpaceService.screenUnderPointer?.displayID)
+            case .toggleNightShift: self?.screenTuning.toggleNightShift()
             case .desktop(let id):
                 self?.desktops.reload()
                 if let space = self?.desktops.spaces.first(where: { $0.id == id }) { self?.desktops.go(to: space) }
@@ -120,6 +126,7 @@ final class AppEnvironment {
     func stop() {
         contextPresets.stop()
         windowRules.stop()
+        screenTuning.stop()
         displayService.turnEverythingBackOn()
         try? settingsStore.saveNow()
     }

@@ -7,6 +7,7 @@ import Combine
 final class HotkeyService: ObservableObject {
     enum Action: Hashable {
         case toggleLine, renameCurrent, restoreDisplays, moveWindow, searchDesktops, previousDesktop, undoMove
+        case brightnessUp, brightnessDown, toggleNightShift
         case desktop(String)
         var sortKey: String { String(describing: self) }
     }
@@ -119,7 +120,8 @@ final class HotkeyService: ObservableObject {
         var result: [Action: String] = [.toggleLine: settings.toggleLineHotkey, .renameCurrent: settings.renameHotkey,
          .restoreDisplays: settings.restoreDisplaysHotkey, .moveWindow: settings.moveWindowHotkey,
          .searchDesktops: settings.searchDesktopsHotkey, .previousDesktop: settings.previousDesktopHotkey,
-         .undoMove: settings.undoMoveHotkey]
+         .undoMove: settings.undoMoveHotkey, .brightnessUp: settings.brightnessUpHotkey,
+         .brightnessDown: settings.brightnessDownHotkey, .toggleNightShift: settings.nightShiftHotkey]
         for (id, shortcut) in settings.desktopHotkeys { result[.desktop(id)] = shortcut }
         return result
     }

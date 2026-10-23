@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.3.1 — 2026-10-23
+
+- Add brightness and warmth sliders for each external screen in **Settings → Screens** and under **Brightness and Color** in the menu bar. Brightness changes the screen's own backlight over DDC/CI when the screen answers (Apple Silicon), and otherwise darkens the picture with a gamma table. Warmth always uses a gamma table, so it works on every screen. Both are remembered per screen.
+- Add shortcuts: **⌃⌥↑ / ⌃⌥↓** brighten or dim the external screen under the pointer by 5%, and **⌃⌥N** turns Night Shift on or off. Change them in **Settings → General → Shortcuts**.
+- Add a Night Shift switch. It is one macOS setting for all screens, and some external screens do not show it; Warmth tints a single screen.
+- DDC/CI and Night Shift use private macOS APIs, so these features suit the GitHub release and not the Mac App Store. If macOS removes them, brightness falls back to software dimming and the Night Shift switch is hidden.
+
 ## v1.3.0 — 2026-10-23
 
 - Unify desktop, window, preset and action search in the command palette, including groups, tags, favorites, pinned commands and recent history.

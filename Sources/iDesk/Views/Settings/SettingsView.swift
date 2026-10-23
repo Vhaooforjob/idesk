@@ -10,7 +10,7 @@ struct SettingsView: View {
                 .tabItem { Label("Desktops", systemImage: "rectangle.on.rectangle") }
             LookTab(viewModel: viewModel)
                 .tabItem { Label("Look", systemImage: "sparkles") }
-            ScreensTab(viewModel: viewModel.screens)
+            ScreensTab(viewModel: viewModel.screens, tuning: viewModel.tuning)
                 .tabItem { Label("Screens", systemImage: "display.2") }
             PresetsTab(viewModel: viewModel.presets, displays: viewModel.screens)
                 .tabItem { Label("Presets", systemImage: "slider.horizontal.3") }
@@ -275,9 +275,11 @@ private struct StyleTile: View {
 
 private struct ScreensTab: View {
     @ObservedObject var viewModel: DisplaysViewModel
+    let tuning: ScreenTuningViewModel?
 
     var body: some View {
         Form {
+            if let tuning { ScreenTuningSections(tuning: tuning) }
             if !viewModel.hasSeveralDisplays {
                 Section {
                     Label("Connect a second screen to choose which ones are on.", systemImage: "display")
@@ -335,7 +337,75 @@ private struct ScreensTab: View {
             }
         }
         .formStyle(.grouped)
-        .onAppear(perform: viewModel.refresh)
+        .onAppear {
+            viewModel.refresh()
+            if let tuning { Task { await tuning.reload() } }
+        }
+    }
+}
+
+/// Brightness and warmth for each external screen, and Night Shift.
+private struct ScreenTuningSections: View {
+    @ObservedObject var tuning: ScreenTuningViewModel
+
+    private static func footer(hardware: Bool) -> LocalizedStringKey {
+        if hardware {
+            return "Brightness changes the screen's own backlight. Warmth tints the picture and lasts while iDesk runs."
+        }
+        return "This screen does not accept brightness commands (some cables and docks do not pass them), so iDesk darkens the picture instead. Keep the screen's own brightness high. Warmth tints the picture and lasts while iDesk runs."
+    }
+
+    var body: some View {
+        ForEach(tuning.screens) { screen in
+            Section {
+                LabeledContent("Brightness") {
+                    Slider(
+                        value: Binding(get: { screen.brightness }, set: { tuning.setBrightness($0, for: screen.id) }),
+                        in: screen.brightnessRange
+                    ) {
+                        Text("Brightness")
+                    } minimumValueLabel: {
+                        Image(systemName: "sun.min")
+                    } maximumValueLabel: {
+                        Image(systemName: "sun.max")
+                    }
+                    .labelsHidden()
+                    .frame(maxWidth: 260)
+                }
+                LabeledContent("Warmth") {
+                    Slider(value: Binding(get: { screen.warmth }, set: { tuning.setWarmth($0, for: screen.id) }), in: 0...1) {
+                        Text("Warmth")
+                    } minimumValueLabel: {
+                        Image(systemName: "snowflake")
+                    } maximumValueLabel: {
+                        Image(systemName: "flame")
+                    }
+                    .labelsHidden()
+                    .frame(maxWidth: 260)
+                }
+                if screen.warmth > 0 || (!screen.usesHardware && screen.brightness < 1) {
+                    Button("Reset Colors") { tuning.resetColors(for: screen.id) }
+                }
+            } header: {
+                Text(screen.name)
+            } footer: {
+                Text(Self.footer(hardware: screen.usesHardware))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        if tuning.hasNightShift {
+            Section {
+                Toggle("Night Shift", isOn: Binding(
+                    get: { tuning.nightShift?.isOn ?? false },
+                    set: { tuning.setNightShift($0) }
+                ))
+            } footer: {
+                Text("Night Shift is one macOS setting for every screen. Some external screens do not show it. Use Warmth above to tint a single screen.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 }
 
@@ -409,6 +479,9 @@ private struct GeneralTab: View {
                 shortcut("Undo Window Move", action: .undoMove, value: $viewModel.settings.undoMoveHotkey)
                 shortcut("Open window picker", action: .moveWindow, value: $viewModel.settings.moveWindowHotkey)
                 shortcut("Turn every screen back on", action: .restoreDisplays, value: $viewModel.settings.restoreDisplaysHotkey)
+                shortcut("Brighten the screen under the pointer", action: .brightnessUp, value: $viewModel.settings.brightnessUpHotkey)
+                shortcut("Dim the screen under the pointer", action: .brightnessDown, value: $viewModel.settings.brightnessDownHotkey)
+                shortcut("Turn Night Shift on or off", action: .toggleNightShift, value: $viewModel.settings.nightShiftHotkey)
                 Text("Click a shortcut and press keys. Esc cancels; Delete clears it.")
                     .font(.caption).foregroundStyle(.secondary)
             }

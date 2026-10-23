@@ -161,10 +161,16 @@ struct AppSettings: Codable, Equatable {
     var names: [String: String] = [:]
     var desktopHotkeys: [String: String] = [:]
     var undoMoveHotkey = "⌃⌥Z"
+    /// Brighten or dim the external screen under the pointer.
+    var brightnessUpHotkey = "⌃⌥↑"
+    var brightnessDownHotkey = "⌃⌥↓"
+    var nightShiftHotkey = "⌃⌥N"
     var lineLayout: DesktopLineLayout = .scroll
     var privateDesktopIDs: Set<String> = []
     var windowRules: [WindowRule] = []
     var workspace = WorkspacePreferences()
+    /// Brightness and warmth of external screens, by display UUID.
+    var screenTuning: [String: ScreenTuning] = [:]
 
     init() {}
 
@@ -194,10 +200,14 @@ struct AppSettings: Codable, Equatable {
         names = (try? c.decode([String: String].self, forKey: .names)) ?? d.names
         desktopHotkeys = (try? c.decode([String: String].self, forKey: .desktopHotkeys)) ?? d.desktopHotkeys
         undoMoveHotkey = (try? c.decode(String.self, forKey: .undoMoveHotkey)) ?? d.undoMoveHotkey
+        brightnessUpHotkey = (try? c.decode(String.self, forKey: .brightnessUpHotkey)) ?? d.brightnessUpHotkey
+        brightnessDownHotkey = (try? c.decode(String.self, forKey: .brightnessDownHotkey)) ?? d.brightnessDownHotkey
+        nightShiftHotkey = (try? c.decode(String.self, forKey: .nightShiftHotkey)) ?? d.nightShiftHotkey
         lineLayout = (try? c.decode(DesktopLineLayout.self, forKey: .lineLayout)) ?? d.lineLayout
         privateDesktopIDs = (try? c.decode(Set<String>.self, forKey: .privateDesktopIDs)) ?? []
         windowRules = (try? c.decode([WindowRule].self, forKey: .windowRules)) ?? []
         workspace = (try? c.decode(WorkspacePreferences.self, forKey: .workspace)) ?? WorkspacePreferences()
+        screenTuning = (try? c.decode([String: ScreenTuning].self, forKey: .screenTuning)) ?? [:]
     }
 
     func name(for space: DesktopSpace) -> String {
