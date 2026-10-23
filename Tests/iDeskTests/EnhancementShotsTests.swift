@@ -33,7 +33,7 @@ final class EnhancementShotsTests: XCTestCase {
         }, readDestinations: { _ in spaces.dropFirst().map { WindowDestination(space: $0, name: names[$0.position]) } })
         await picker.load()
         try render(WindowPickerView(viewModel: picker, settingsStore: store, submit: {}, cancel: {}, refresh: {}, openAccessibility: {}),
-                   name: "move", size: NSSize(width: 720, height: 480), folder: folder)
+                   name: "move", size: NSSize(width: 780, height: 590), folder: folder)
         let displays = DisplaysViewModel(service: FakeDisplayService([
             DisplayInfo(id: 1, name: "Main", isBuiltin: true, isEnabled: true)
         ]), dialogs: FakeDialogs())
@@ -44,11 +44,24 @@ final class EnhancementShotsTests: XCTestCase {
         let desktops = DesktopsViewModel(spaceService: service, thumbnailStore: ThumbnailStore(folder: folder),
             settingsStore: store, switcher: SpaceSwitcher(spaces: service), desktopManager: FakeDesktopManager(), dialogs: FakeDialogs())
         let settings = SettingsViewModel(settingsStore: store, desktops: desktops, screens: displays)
+        try render(AutomationTab(viewModel: settings), name: "rules", size: NSSize(width: 720, height: 560), folder: folder)
+        try render(WorkspaceToolsTab(model: settings, journal: desktops.journal, updates: settings.updates), name: "workspace-tools", size: NSSize(width: 780, height: 650), folder: folder)
+        var editable = WorkspacePreset(name: "Work Session", settings: store.value)
+        editable.session = WorkspaceSession(windows: [.init(bundleID: "app.editor", title: "Project", desktopID: "S2", normalizedFrame: CGRect(x: 0, y: 0, width: 0.5, height: 1))])
+        try render(SessionEditor(model: presets, draft: editable, close: {}), name: "session-editor", size: NSSize(width: 660, height: 560), folder: folder)
+        for layout in DesktopLineLayout.allCases {
+            store.value.lineLayout = layout
+            let line = DesktopLineViewModel(preview: SettingsViewModel.sampleDesktops, settings: store.$value.eraseToAnyPublisher())
+            try render(DesktopLineView(viewModel: line, isInteractive: false), name: "layout-" + layout.rawValue,
+                       size: NSSize(width: 720, height: 232), folder: folder)
+        }
         try render(SettingsView(viewModel: settings), name: "settings", size: NSSize(width: 760, height: 600), folder: folder)
     }
 
     private func render<V: View>(_ view: V, name: String, size: NSSize, folder: URL) throws {
-        let host = NSHostingView(rootView: view)
+        let host = NSHostingView(rootView: view.frame(width: size.width, height: size.height))
+        host.sizingOptions = []
+        host.frame = NSRect(origin: .zero, size: size)
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = host
         host.frame = NSRect(origin: .zero, size: size)

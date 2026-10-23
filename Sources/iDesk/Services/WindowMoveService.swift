@@ -15,6 +15,10 @@ struct WindowListEntry {
     let appName: String
     let title: String
     var icon: NSImage? = nil
+    var bundleID: String? = nil
+    var frame: CGRect? = nil
+    var desktopName: String = ""
+    var isMinimized = false
 }
 
 struct WindowCandidate: Identifiable {
@@ -23,6 +27,10 @@ struct WindowCandidate: Identifiable {
     let title: String
     var icon: NSImage? = nil
     var id: CGWindowID { selection.id }
+    var bundleID: String? = nil
+    var frame: CGRect? = nil
+    var desktopName: String = ""
+    var isMinimized = false
 }
 
 @MainActor
@@ -31,6 +39,7 @@ protocol WindowMoving: AnyObject {
     func captureFocusedWindow() throws -> WindowSelection
     func move(_ window: WindowSelection, to destination: DesktopSpace) async throws
     func focus(_ window: WindowSelection) throws
+    func setFrame(_ frame: CGRect, of window: WindowSelection) throws
 }
 
 enum WindowMoveError: LocalizedError, Equatable {
@@ -59,6 +68,7 @@ protocol WindowMoveSystem: AnyObject {
     func spaces(for window: CGWindowID) throws -> [Int]
     func move(_ window: CGWindowID, to space: Int) throws
     func focus(_ window: WindowSelection) throws
+    func setFrame(_ frame: CGRect, of window: WindowSelection) throws
 }
 
 @MainActor
@@ -92,10 +102,10 @@ final class WindowMoveService: WindowMoving {
             guard seen.insert(window.id).inserted,
                   let memberships = try? system.spaces(for: window.id), memberships.count == 1,
                   let source = spaces.first(where: { $0.managedID == memberships[0] }),
-                  source.kind == .desktop, source.isCurrent else { return nil }
+                  source.kind == .desktop else { return nil }
             return WindowCandidate(
                 selection: WindowSelection(id: window.id, processID: window.processID, sourceSpaceID: source.managedID),
-                appName: window.appName, title: window.title, icon: window.icon)
+                appName: window.appName, title: window.title, icon: window.icon, bundleID: window.bundleID, frame: window.frame, isMinimized: window.isMinimized)
         }
     }
 
@@ -121,6 +131,7 @@ final class WindowMoveService: WindowMoving {
     }
 
     func focus(_ window: WindowSelection) throws { try system.focus(window) }
+    func setFrame(_ frame: CGRect, of window: WindowSelection) throws { try system.setFrame(frame, of: window) }
 }
 
 /// Private SkyLight entry points are resolved at runtime so a missing symbol
@@ -154,10 +165,10 @@ private final class SkyLightWindowSystem: WindowMoveSystem {
         return value
     }
 
-    private func checkWindow(_ element: AXUIElement) throws {
+    private func checkWindow(_ element: AXUIElement, allowMinimized: Bool = false) throws {
         guard attribute(kAXSubroleAttribute, of: element) as? String == kAXStandardWindowSubrole,
               attribute("AXFullScreen", of: element) as? Bool != true,
-              attribute(kAXMinimizedAttribute, of: element) as? Bool != true else {
+              (allowMinimized || attribute(kAXMinimizedAttribute, of: element) as? Bool != true) else {
             throw WindowMoveError.unsupportedWindow
         }
     }
@@ -183,15 +194,13 @@ private final class SkyLightWindowSystem: WindowMoveSystem {
         guard let windowID, connection != nil, copySpaces != nil else { throw WindowMoveError.unavailable }
         // Window IDs/order need no image capture. Read titles via Accessibility,
         // so the picker does not require Screen Recording permission.
-        let visible = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
+        let visible = CGWindowListCopyWindowInfo([.optionAll, .excludeDesktopElements], kCGNullWindowID)
             as? [[String: Any]] ?? []
         let ids = visible.compactMap { ($0[kCGWindowNumber as String] as? NSNumber)?.uint32Value }
         let order = Dictionary(ids.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
-        let owners = Set(visible.compactMap { ($0[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value })
         var result: [WindowListEntry] = []
         for app in NSWorkspace.shared.runningApplications
-            where owners.contains(app.processIdentifier) && !app.isHidden
-                && app.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+            where app.activationPolicy == .regular && app.processIdentifier != ProcessInfo.processInfo.processIdentifier {
             try Task.checkCancellation()
             await Task.yield()
             let application = AXUIElementCreateApplication(app.processIdentifier)
@@ -199,18 +208,47 @@ private final class SkyLightWindowSystem: WindowMoveSystem {
             guard let windows = attribute(kAXWindowsAttribute, of: application) as? [AXUIElement] else { continue }
             for element in windows {
                 var id: CGWindowID = 0
-                guard windowID(element, &id) == .success, order[id] != nil,
-                      (try? checkWindow(element)) != nil else { continue }
+                guard windowID(element, &id) == .success, id != 0,
+                      (try? checkWindow(element, allowMinimized: true)) != nil else { continue }
                 let name = app.localizedName ?? String(localized: "Application")
                 let title = (attribute(kAXTitleAttribute, of: element) as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
                 result.append(WindowListEntry(id: id, processID: app.processIdentifier, appName: name,
-                    title: title.flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Untitled Window"), icon: app.icon))
+                    title: title.flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Untitled Window"), icon: app.icon, bundleID: app.bundleIdentifier, frame: frame(of: element), isMinimized: attribute(kAXMinimizedAttribute, of: element) as? Bool == true))
             }
         }
         return result.sorted { order[$0.id, default: .max] < order[$1.id, default: .max] }
     }
 
-    private func element(for window: WindowSelection) throws -> AXUIElement {
+    private func frame(of element: AXUIElement) -> CGRect? {
+        guard let position = attribute(kAXPositionAttribute, of: element),
+              let size = attribute(kAXSizeAttribute, of: element),
+              CFGetTypeID(position) == AXValueGetTypeID(), CFGetTypeID(size) == AXValueGetTypeID() else { return nil }
+        var point = CGPoint.zero
+        var dimensions = CGSize.zero
+        guard AXValueGetValue(unsafeBitCast(position, to: AXValue.self), .cgPoint, &point),
+              AXValueGetValue(unsafeBitCast(size, to: AXValue.self), .cgSize, &dimensions) else { return nil }
+        return CGRect(origin: point, size: dimensions)
+    }
+
+    func setFrame(_ frame: CGRect, of window: WindowSelection) throws {
+        guard frame.origin.x.isFinite, frame.origin.y.isFinite, frame.width.isFinite, frame.height.isFinite,
+              frame.width > 0, frame.height > 0 else { throw WindowMoveError.unsupportedWindow }
+        let element = try element(for: window)
+        var point = frame.origin
+        var size = frame.size
+        guard let position = AXValueCreate(.cgPoint, &point), let dimensions = AXValueCreate(.cgSize, &size),
+              AXUIElementSetAttributeValue(element, kAXSizeAttribute as CFString, dimensions) == .success,
+              AXUIElementSetAttributeValue(element, kAXPositionAttribute as CFString, position) == .success else {
+            throw WindowMoveError.refused
+        }
+        guard let actual = self.frame(of: element),
+              abs(actual.minX - frame.minX) <= 3, abs(actual.minY - frame.minY) <= 3,
+              abs(actual.width - frame.width) <= 3, abs(actual.height - frame.height) <= 3 else {
+            throw WorkspaceFeatureError(message: String(localized: "The app did not accept the requested window size or position."))
+        }
+    }
+
+    private func element(for window: WindowSelection, allowMinimized: Bool = false) throws -> AXUIElement {
         guard AXIsProcessTrusted() else { throw WindowMoveError.needsPermission }
         guard let windowID else { throw WindowMoveError.unavailable }
         let app = AXUIElementCreateApplication(window.processID)
@@ -220,7 +258,7 @@ private final class SkyLightWindowSystem: WindowMoveSystem {
                   var id: CGWindowID = 0
                   return windowID($0, &id) == .success && id == window.id
               }) else { throw WindowMoveError.staleWindow }
-        try checkWindow(element)
+        try checkWindow(element, allowMinimized: allowMinimized)
         return element
     }
 
@@ -252,11 +290,24 @@ private final class SkyLightWindowSystem: WindowMoveSystem {
     }
 
     func focus(_ window: WindowSelection) throws {
-        let element = try element(for: window)
+        let element = try element(for: window, allowMinimized: true)
+        if attribute(kAXMinimizedAttribute, of: element) as? Bool == true {
+            guard AXUIElementSetAttributeValue(element, kAXMinimizedAttribute as CFString, kCFBooleanFalse) == .success else { throw WindowMoveError.refused }
+        }
         guard AXUIElementPerformAction(element, kAXRaiseAction as CFString) == .success,
               NSRunningApplication(processIdentifier: window.processID)?.activate(options: []) == true else {
             throw WindowMoveError.followFailed
         }
         _ = AXUIElementSetAttributeValue(element, kAXMainAttribute as CFString, kCFBooleanTrue)
     }
+}
+
+@MainActor
+extension WindowMoving {
+    func setFrame(_ frame: CGRect, of window: WindowSelection) throws { throw WindowMoveError.unavailable }
+}
+
+@MainActor
+extension WindowMoveSystem {
+    func setFrame(_ frame: CGRect, of window: WindowSelection) throws { throw WindowMoveError.unavailable }
 }

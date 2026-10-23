@@ -8,6 +8,102 @@ import Combine
 final class DesktopsViewModel {
     /// A desktop the user just arrived on.
     let arrivals = PassthroughSubject<DesktopSpace, Never>()
+    let journal = OperationJournal()
+    private let metadataChanges = PassthroughSubject<Void, Never>()
+    private(set) var cachedWindows: [WindowCandidate] = []
+    private(set) var recentDesktopIDs: [String] = []
+    private var geometryHistory: [[(WindowSelection, CGRect)]] = []
+    var canUndoArrangement: Bool { !geometryHistory.isEmpty && !isMovingWindow }
+    var showWindows: ((String) -> Void)?
+    private var refreshingWindows = false
+
+    func refreshWindowMetadata() async {
+        guard !refreshingWindows else { return }
+        refreshingWindows = true
+        defer { refreshingWindows = false }
+        cachedWindows = (try? await windowsForMove()) ?? []
+        metadataChanges.send(())
+    }
+
+    func windowMetadata(for space: DesktopSpace) -> [WindowCandidate] {
+        guard settings.workspace.showsWindowBadges, !settings.privateDesktopIDs.contains(space.id) else { return [] }
+        return cachedWindows.filter { $0.selection.sourceSpaceID == space.managedID }
+    }
+
+    func goAndWait(to id: String) async throws {
+        reload()
+        guard let space = spaces.first(where: { $0.id == id }) else { throw WindowMoveError.invalidDestination }
+        switch switcher.go(to: space) {
+        case .alreadyThere: return
+        case .switching: break
+        case .needsPermission: throw WindowMoveError.needsPermission
+        case .noShortcut: throw SwitchError.didNotArrive
+        }
+        for _ in 0..<60 {
+            try Task.checkCancellation()
+            reload()
+            if spaces.contains(where: { $0.id == id && $0.isCurrent }) { return }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        throw SwitchError.didNotArrive
+    }
+
+    var arrangementBounds: (String) -> CGRect? = { displayID in
+        DesktopsViewModel.screen(for: displayID).map(WorkspaceSessionService.accessibilityBounds)
+    }
+
+    func arrange(_ selections: [WindowSelection], using arrangement: WindowArrangement) async {
+        await arrange(selections, using: arrangement, startingPositions: [:])
+    }
+
+    private func arrange(_ selections: [WindowSelection], using arrangement: WindowArrangement,
+                         startingPositions: [String: Int]) async {
+        guard !isMovingWindow else { return }
+        isMovingWindow = true
+        defer { isMovingWindow = false }
+        var undo: [(WindowSelection, CGRect)] = []
+        var failures: [String] = []
+        do {
+            let live = try await windowMover.availableWindows()
+            var positions = startingPositions
+            for selection in selections {
+                let retryPositions = positions
+                do {
+                    guard let window = live.first(where: { $0.selection == selection && !$0.isMinimized }), let original = window.frame,
+                          let space = spaces.first(where: { $0.managedID == selection.sourceSpaceID }),
+                          let bounds = arrangementBounds(space.displayID) else { throw WindowMoveError.staleWindow }
+                    let index = positions[space.displayID, default: 0]
+                    if arrangement == .grid && index >= 4 { throw WorkspaceFeatureError(message: String(localized: "Select at most four windows per display for a grid.")) }
+                    positions[space.displayID] = index + 1
+                    // Preserve the original even if an app accepts only part of a resize.
+                    undo.append((selection, original))
+                    try windowMover.setFrame(arrangement.frame(in: bounds, original: original, index: index), of: selection)
+                    journal.record(arrangement.title, item: "Window #\(selection.id)")
+                } catch { failures.append(error.localizedDescription); journal.record(arrangement.title, item: "Window #\(selection.id)", error: error, retry: { [weak self] in await self?.arrange([selection], using: arrangement, startingPositions: retryPositions) }) }
+            }
+        } catch { journal.record(arrangement.title, item: "Windows", error: error) }
+        if !undo.isEmpty { geometryHistory.append(undo); if geometryHistory.count > 20 { geometryHistory.removeFirst() } }
+        if !failures.isEmpty { dialogs.showError(String(localized: "Some windows could not be arranged"), WorkspaceFeatureError(message: failures.joined(separator: "\n"))) }
+    }
+
+    func undoArrangement() async {
+        guard !isMovingWindow, let records = geometryHistory.popLast() else { return }
+        isMovingWindow = true
+        defer { isMovingWindow = false }
+        var failed: [(WindowSelection, CGRect)] = []
+        for (window, frame) in records.reversed() {
+            do {
+                let live = try await windowMover.availableWindows()
+                guard live.contains(where: { $0.selection == window }) else { throw WindowMoveError.staleWindow }
+                try windowMover.setFrame(frame, of: window)
+                journal.record("Undo Arrangement", item: "Window #\(window.id)")
+            } catch {
+                if (error as? WindowMoveError) != .staleWindow { failed.append((window, frame)) }
+                journal.record("Undo Arrangement", item: "Window #\(window.id)", error: error)
+            }
+        }
+        if !failed.isEmpty { geometryHistory.append(Array(failed.reversed())) }
+    }
     /// A desktop whose card should play the switch effect.
     let highlights = PassthroughSubject<String, Never>()
     /// Whether iDesk may drive Mission Control; replaced in tests.
@@ -18,7 +114,14 @@ final class DesktopsViewModel {
     private let settingsStore: SettingsStore
     private let switcher: SpaceSwitching
     private let windowMover: WindowMoving
-    private var isMovingWindow = false
+    private(set) var isMovingWindow = false
+    private(set) var moveHistory: [[WindowMoveRecord]] = []
+    var canUndoMove: Bool { !moveHistory.isEmpty && !isMovingWindow }
+    struct WindowMoveRecord {
+        let original: WindowSelection
+        let source: DesktopSpace
+        let destination: DesktopSpace
+    }
     private let desktopManager: DesktopManaging
     private let dialogs: DialogPresenting
     private var lastCurrent: [String: String] = [:]
@@ -68,6 +171,7 @@ final class DesktopsViewModel {
             settingsStore.$value.map { _ in () }
         )
         // @Published fires before the value is stored; read it a moment later.
+        .merge(with: metadataChanges)
         .receive(on: RunLoop.main)
         .eraseToAnyPublisher()
     }
@@ -93,7 +197,7 @@ final class DesktopsViewModel {
     }
 
     func thumbnail(for space: DesktopSpace) -> NSImage? {
-        thumbnailStore.images[space.id]
+        settings.showsPreviews && !settings.privateDesktopIDs.contains(space.id) ? thumbnailStore.images[space.id] : nil
     }
 
     /// The Spaces grouped by display, in Mission Control's order.
@@ -115,7 +219,8 @@ final class DesktopsViewModel {
                     name: value.name(for: space),
                     thumbnail: value.showsPreviews ? thumbnail(for: space) : nil,
                     appearance: value.appearances[space.id] ?? DesktopAppearance(),
-                    aspect: aspect
+                    aspect: aspect,
+                    windows: windowMetadata(for: space)
                 )
             }
     }
@@ -150,6 +255,10 @@ final class DesktopsViewModel {
         switcher.spaceDidChange()
         let arrived = spaces.filter { $0.isCurrent && lastCurrent[$0.displayID] != $0.id }
         for space in arrived {
+            if let previous = lastCurrent[space.displayID] {
+                recentDesktopIDs.removeAll { $0 == previous }; recentDesktopIDs.insert(previous, at: 0)
+                recentDesktopIDs = Array(recentDesktopIDs.prefix(30))
+            }
             if let previous = lastCurrent[space.displayID] { previousSpaces[space.displayID] = previous }
         }
         rememberCurrent()
@@ -192,7 +301,12 @@ final class DesktopsViewModel {
     }
 
     func windowsForMove() async throws -> [WindowCandidate] {
-        try await windowMover.availableWindows()
+        let windows = try await windowMover.availableWindows()
+        return windows.map { window in
+            var item = window
+            if let space = spaces.first(where: { $0.managedID == item.selection.sourceSpaceID }) { item.desktopName = name(for: space) }
+            return item
+        }
     }
 
     func windowMoveDestinations(for selection: Result<WindowSelection, Error>) -> [DesktopSpace] {
@@ -206,36 +320,116 @@ final class DesktopsViewModel {
     }
 
     func moveWindow(_ selection: Result<WindowSelection, Error>, to destination: DesktopSpace, follow: Bool = true) async {
-        guard !isMovingWindow else { return }
+        do { await moveWindows([try selection.get()], to: destination, follow: follow) }
+        catch { dialogs.showError(String(localized: "Could not move the window"), error) }
+    }
+
+    func moveWindows(_ windows: [WindowSelection], to destination: DesktopSpace, follow: Bool = true) async {
+        guard !isMovingWindow, !windows.isEmpty else { return }
         isMovingWindow = true
         defer { isMovingWindow = false }
-        do {
-            let window = try selection.get()
-            try await windowMover.move(window, to: destination)
-            reload()
-            guard follow else { highlights.send(destination.id); return }
-            guard let target = spaces.first(where: { $0.id == destination.id }) else { throw WindowMoveError.followFailed }
-            switch switcher.go(to: target) {
-            case .alreadyThere, .switching: break
-            case .needsPermission, .noShortcut: throw WindowMoveError.followFailed
-            }
-            // Focus only after arriving, so activating the app cannot pull the
-            // user back to a different window on the original desktop.
-            for _ in 0..<50 {
+        var moved: [WindowMoveRecord] = []
+        var errors: [String] = []
+        var seen = Set<CGWindowID>()
+        for window in windows where seen.insert(window.id).inserted {
+            do {
+                try Task.checkCancellation()
                 reload()
-                if spaces.contains(where: { $0.id == target.id && $0.isCurrent }) {
-                    try windowMover.focus(window)
-                    highlights.send(target.id)
-                    return
-                }
-                try await Task.sleep(for: .milliseconds(100))
+                guard let source = spaces.first(where: { $0.managedID == window.sourceSpaceID }) else { throw WindowMoveError.staleWindow }
+                try await windowMover.move(window, to: destination)
+                moved.append(WindowMoveRecord(original: window, source: source, destination: destination))
+                journal.record("Move Window", item: "Window #\(window.id)")
+            } catch {
+                errors.append(error.localizedDescription)
+                journal.record("Move Window", item: "Window #\(window.id)", error: error, retry: { [weak self] in
+                    await self?.moveWindows([window], to: destination, follow: false)
+                })
             }
-            throw WindowMoveError.followFailed
-        } catch is CancellationError {
-            return
-        } catch {
-            dialogs.showError(String(localized: "Could not move the window"), error)
         }
+        if !moved.isEmpty {
+            moveHistory.append(moved)
+            if moveHistory.count > 20 { moveHistory.removeFirst() }
+            highlights.send(destination.id)
+            if follow, let window = moved.first?.original {
+                do { try await switchAndFocus(window, on: destination) }
+                catch { errors.append(error.localizedDescription) }
+            }
+        }
+        if !errors.isEmpty {
+            dialogs.showError(String(localized: "Could not move the window"), WorkspaceFeatureError(message: errors.joined(separator: "\n")))
+        }
+    }
+
+    func undoLastMove() async {
+        guard !isMovingWindow, let records = moveHistory.popLast() else { return }
+        isMovingWindow = true
+        defer { isMovingWindow = false }
+        var failed: [WindowMoveRecord] = []
+        var messages: [String] = []
+        for record in records.reversed() {
+            do {
+                let current = WindowSelection(id: record.original.id, processID: record.original.processID,
+                                              sourceSpaceID: record.destination.managedID)
+                try await windowMover.move(current, to: record.source)
+            } catch {
+                if (error as? WindowMoveError) != .staleWindow && (error as? WindowMoveError) != .invalidDestination {
+                    failed.append(record)
+                }
+                messages.append(error.localizedDescription)
+            }
+        }
+        if !failed.isEmpty {
+            moveHistory.append(Array(failed.reversed()))
+        }
+        if !messages.isEmpty {
+            dialogs.showError(String(localized: "Some windows could not be restored"), WorkspaceFeatureError(message: messages.joined(separator: "\n")))
+        }
+        reload()
+    }
+
+    func activateWindowAndWait(_ window: WindowSelection) async throws {
+        reload()
+        let fresh = try await windowMover.availableWindows()
+        guard fresh.contains(where: { $0.selection == window }),
+              let target = spaces.first(where: { $0.managedID == window.sourceSpaceID }) else { throw WindowMoveError.staleWindow }
+        try await switchAndFocus(window, on: target)
+    }
+
+    func activateWindow(_ window: WindowSelection) async {
+        do { try await activateWindowAndWait(window) }
+        catch { dialogs.showError(String(localized: "Could not open the window"), error) }
+    }
+
+    private func switchAndFocus(_ window: WindowSelection, on destination: DesktopSpace) async throws {
+        reload()
+        guard let target = spaces.first(where: { $0.id == destination.id }) else { throw WindowMoveError.followFailed }
+        switch switcher.go(to: target) {
+        case .alreadyThere, .switching: break
+        case .needsPermission, .noShortcut: throw WindowMoveError.followFailed
+        }
+        for _ in 0..<50 {
+            reload()
+            if spaces.contains(where: { $0.id == target.id && $0.isCurrent }) {
+                try windowMover.focus(window)
+                highlights.send(target.id)
+                return
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        throw WindowMoveError.followFailed
+    }
+
+    /// Automation shares the same operation lock, but does not alter manual undo history.
+    func placeWindow(_ window: WindowSelection, on target: DesktopSpace, frame: CGRect? = nil) async throws {
+        guard !isMovingWindow else { throw WorkspaceFeatureError(message: String(localized: "A window operation is already running. Try again.")) }
+        isMovingWindow = true
+        defer { isMovingWindow = false }
+        var selected = window
+        if window.sourceSpaceID != target.managedID {
+            try await windowMover.move(window, to: target)
+            selected = WindowSelection(id: window.id, processID: window.processID, sourceSpaceID: target.managedID)
+        }
+        if let frame { try windowMover.setFrame(frame, of: selected) }
     }
 
     // MARK: Naming
@@ -271,7 +465,13 @@ final class DesktopsViewModel {
         guard hasAccessibility() else { return requestSwitchingPermission() }
         do {
             try await desktopManager.removeDesktop(at: space.position, on: Self.displayNumber(for: space.displayID))
+            settingsStore.value.workspace.organization[space.id] = nil
+            settingsStore.value.workspace.pinnedCommands.remove("desktop:" + space.id)
             settingsStore.value.names[space.id] = nil
+            settingsStore.value.desktopHotkeys[space.id] = nil
+            settingsStore.value.appearances[space.id] = nil
+            settingsStore.value.privateDesktopIDs.remove(space.id)
+            settingsStore.value.windowRules.removeAll { $0.desktopID == space.id }
             reload()
         } catch {
             let howTo = String(localized: "In Mission Control, point at “\(name(for: space))” at the top of the screen and click its ✕.")
@@ -302,7 +502,7 @@ final class DesktopsViewModel {
 
     // MARK: Previews
 
-    func previewDate(for space: DesktopSpace) -> Date? { thumbnailStore.dates[space.id] }
+    func previewDate(for space: DesktopSpace) -> Date? { settings.privateDesktopIDs.contains(space.id) ? nil : thumbnailStore.dates[space.id] }
 
     func clearPreviews() throws { try thumbnailStore.clear() }
 
@@ -311,9 +511,9 @@ final class DesktopsViewModel {
     }
 
     func refreshPreview(on screen: NSScreen, force: Bool = false) {
-        guard settings.showsPreviews, let space = currentSpace(on: screen) else { return }
+        guard settings.showsPreviews, let space = currentSpace(on: screen), !settings.privateDesktopIDs.contains(space.id) else { return }
         thumbnailStore.capture(space, on: screen, force: force) { [weak self] in
-            guard let self, self.settings.showsPreviews else { return false }
+            guard let self, self.settings.showsPreviews, !self.settings.privateDesktopIDs.contains(space.id) else { return false }
             self.reload()
             return self.currentSpace(on: screen)?.id == space.id
         }

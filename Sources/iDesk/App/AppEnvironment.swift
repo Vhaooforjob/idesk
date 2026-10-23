@@ -20,6 +20,11 @@ final class AppEnvironment {
     var showWindowPicker: (() -> Void)?
     var showDesktopSearch: (() -> Void)?
     let presets: PresetsViewModel
+    let windowRules: WindowRuleService
+    let contextPresets: ContextPresetService
+    let updates = UpdateService()
+    var showSettings: (() -> Void)?
+    static weak var active: AppEnvironment?
 
     private let hotkeys = HotkeyService()
     private var cancellables: Set<AnyCancellable> = []
@@ -44,22 +49,44 @@ final class AppEnvironment {
         line = DesktopLineViewModel(desktops: desktops)
         banner = NameBannerViewModel(desktops: desktops)
         displays = DisplaysViewModel(service: displayService, dialogs: dialogs)
-        presets = PresetsViewModel(store: settingsStore, displays: displays)
+        presets = PresetsViewModel(store: settingsStore, displays: displays, sessions: WorkspaceSessionService(desktops: desktops))
+        windowRules = WindowRuleService(store: settingsStore, desktops: desktops, suspended: { [weak presets] in
+            presets?.isApplying == true || presets?.isSaving == true
+        })
+        contextPresets = ContextPresetService(store: settingsStore, presets: presets, journal: desktops.journal)
+        presets.onSessionError = { [dialogs] message in
+            dialogs.showError(String(localized: "Some session items could not be restored"), WorkspaceFeatureError(message: message))
+        }
         menuBar = MenuBarViewModel(desktops: desktops, line: line, displays: displays, settingsStore: settingsStore, dialogs: dialogs, presets: presets)
     }
 
     func makeSettingsViewModel() -> SettingsViewModel {
-        SettingsViewModel(settingsStore: settingsStore, desktops: desktops, screens: displays, hotkeys: hotkeys, presets: presets)
+        SettingsViewModel(settingsStore: settingsStore, desktops: desktops, screens: displays, hotkeys: hotkeys, presets: presets, windowRules: windowRules, contextPresets: contextPresets, updates: updates)
     }
 
     func start() {
+        Self.active = self
         PermissionService.logState()
         desktops.start()
+        windowRules.start()
+        contextPresets.start()
+        WorkspaceShortcuts.updateAppShortcutParameters()
         settingsStore.$value.map(\.storesPreviewsOnDisk).removeDuplicates()
             .sink { [weak self] enabled in
                 guard let self else { return }
                 do { try self.thumbnailStore.setStoresOnDisk(enabled) }
                 catch { self.dialogs.showError(String(localized: "Could not clear preview cache"), error) }
+            }.store(in: &cancellables)
+
+        settingsStore.$value.map(\.privateDesktopIDs).removeDuplicates()
+            .sink { [weak self] ids in
+                guard let self else { return }
+                do { try self.thumbnailStore.setPrivateSpaces(ids) }
+                catch { self.dialogs.showError(String(localized: "Could not clear private previews"), error) }
+            }.store(in: &cancellables)
+        settingsStore.$saveError.compactMap { $0 }.removeDuplicates()
+            .sink { [weak self] message in
+                self?.dialogs.showError(String(localized: "Settings could not be saved"), WorkspaceFeatureError(message: message))
             }.store(in: &cancellables)
 
         hotkeys.onAction = { [weak self] action in
@@ -70,6 +97,10 @@ final class AppEnvironment {
             case .moveWindow: self?.showWindowPicker?()
             case .searchDesktops: self?.showDesktopSearch?()
             case .previousDesktop: self?.desktops.goToPreviousDesktop()
+            case .undoMove: Task { await self?.desktops.undoLastMove() }
+            case .desktop(let id):
+                self?.desktops.reload()
+                if let space = self?.desktops.spaces.first(where: { $0.id == id }) { self?.desktops.go(to: space) }
             }
         }
         settingsStore.$value
@@ -79,8 +110,16 @@ final class AppEnvironment {
             .store(in: &cancellables)
     }
 
+    func restoreDisplaysAndVerify() throws {
+        try displayService.recoverAll()
+        displayService.refresh()
+        guard displayService.displays.allSatisfy(\.isEnabled) else { throw DisplayError.cannotTurnOff }
+    }
+
     /// Screens iDesk turned off come back when it quits.
     func stop() {
+        contextPresets.stop()
+        windowRules.stop()
         displayService.turnEverythingBackOn()
         try? settingsStore.saveNow()
     }

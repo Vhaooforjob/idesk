@@ -35,7 +35,7 @@ private final class FakeWindowSystem: WindowMoveSystem {
 final class WindowMoveServiceTests: XCTestCase {
     private let selection = WindowSelection(id: 42, processID: 123, sourceSpaceID: 1)
 
-    func testPickerListsOnlyWindowsOnCurrentRegularDesktopsWithoutDuplicates() async throws {
+    func testPickerListsWindowsAcrossRegularDesktopsWithoutDuplicates() async throws {
         let system = FakeWindowSystem()
         system.listedWindows = [42, 43, 44, 45, 46, 42].map {
             WindowListEntry(id: UInt32($0), processID: 123, appName: "App", title: "Window \($0)")
@@ -45,7 +45,7 @@ final class WindowMoveServiceTests: XCTestCase {
             [desktop(1, current: true), desktop(2), desktop(3, current: true, kind: .fullScreen)]
         })
         let windows = try await service.availableWindows()
-        XCTAssertEqual(windows.map(\.id), [42])
+        XCTAssertEqual(windows.map(\.id), [42, 43])
         XCTAssertEqual(windows.first?.selection, selection)
         XCTAssertEqual(windows.first?.title, "Window 42")
     }
@@ -123,18 +123,29 @@ final class WindowMoveServiceTests: XCTestCase {
 
 @MainActor
 private final class FakeWindowMover: WindowMoving {
-    func availableWindows() async throws -> [WindowCandidate] { [] }
+    var listedWindows: [WindowCandidate] = []
+    func availableWindows() async throws -> [WindowCandidate] { listedWindows }
     var captured = WindowSelection(id: 42, processID: 123, sourceSpaceID: 1)
     var moved: [WindowSelection] = []
     var focused: [WindowSelection] = []
     var error: Error?
     var onMove: (() async -> Void)?
+    var rejectedIDs = Set<CGWindowID>()
+    var rejection: WindowMoveError = .staleWindow
+    var destinations: [Int] = []
+    var frames: [CGRect] = []
+    func setFrame(_ frame: CGRect, of window: WindowSelection) throws {
+        frames.append(frame)
+        if rejectedIDs.contains(window.id) { throw rejection }
+    }
     func captureFocusedWindow() throws -> WindowSelection {
         if let error { throw error }
         return captured
     }
     func move(_ window: WindowSelection, to destination: DesktopSpace) async throws {
         if let error { throw error }
+        if rejectedIDs.contains(window.id) { throw rejection }
+        destinations.append(destination.managedID)
         moved.append(window)
         await onMove?()
     }
@@ -187,6 +198,26 @@ final class WindowMoveViewModelTests: XCTestCase {
     }
 
     override func tearDown() async throws { try? FileManager.default.removeItem(at: folder) }
+
+    func testGridRetryKeepsFourthCellAndUsesCurrentScreenBounds() async throws {
+        var bounds = CGRect(x: 0, y: 25, width: 1600, height: 900)
+        viewModel.arrangementBounds = { _ in bounds }
+        let original = CGRect(x: 100, y: 100, width: 600, height: 400)
+        mover.listedWindows = (42...45).map {
+            WindowCandidate(selection: WindowSelection(id: UInt32($0), processID: 123, sourceSpaceID: 1),
+                            appName: "App", title: "Window", frame: original)
+        }
+        mover.rejectedIDs = [45]
+        await viewModel.arrange(mover.listedWindows.map(\.selection), using: .grid)
+        let failed = try XCTUnwrap(viewModel.journal.entries.first(where: { $0.error != nil }))
+        XCTAssertEqual(mover.frames.last, WindowArrangement.grid.frame(in: bounds, original: original, index: 3))
+        mover.rejectedIDs = []
+        bounds.size.width = 2000
+        await viewModel.journal.retry(failed)
+        XCTAssertEqual(mover.frames.count, 5)
+        XCTAssertEqual(mover.frames.last, WindowArrangement.grid.frame(in: bounds, original: original, index: 3))
+        XCTAssertNil(viewModel.journal.entries.first?.error)
+    }
 
     func testDestinationsExcludeSourceFullscreenAndOtherDisplays() {
         XCTAssertEqual(viewModel.windowMoveDestinations(for: viewModel.captureWindowForMove()).map(\.id), ["S2"])
@@ -244,6 +275,167 @@ final class WindowMoveViewModelTests: XCTestCase {
         }
         await viewModel.moveWindow(selection, to: desktop(2))
         XCTAssertEqual(mover.moved.count, 1)
+    }
+
+    func testBatchMoveRecordsOnlySuccessfulWindowsAndUndoUsesDestinationMembership() async {
+        let first = mover.captured
+        let second = WindowSelection(id: 43, processID: 124, sourceSpaceID: 1)
+        mover.rejectedIDs = [43]
+        await viewModel.moveWindows([first, first, second], to: desktop(2), follow: false)
+        XCTAssertEqual(mover.moved.map(\.id), [42])
+        XCTAssertEqual(viewModel.moveHistory.last?.count, 1)
+        XCTAssertTrue(viewModel.canUndoMove)
+        await viewModel.undoLastMove()
+        XCTAssertEqual(mover.moved.last?.sourceSpaceID, 2)
+        XCTAssertEqual(mover.destinations, [2, 1])
+        XCTAssertFalse(viewModel.canUndoMove)
+        XCTAssertTrue(switcher.visits.isEmpty)
+    }
+
+    func testFailedUndoRetainsOnlyUnrestoredWindowsForRetry() async {
+        let second = WindowSelection(id: 43, processID: 124, sourceSpaceID: 1)
+        await viewModel.moveWindows([mover.captured, second], to: desktop(2), follow: false)
+        mover.rejectedIDs = [43]
+        mover.rejection = .refused
+        await viewModel.undoLastMove()
+        XCTAssertEqual(viewModel.moveHistory.last?.map { $0.original.id }, [43])
+        mover.rejectedIDs = []
+        await viewModel.undoLastMove()
+        XCTAssertFalse(viewModel.canUndoMove)
+        XCTAssertEqual(mover.moved.filter { $0.id == 42 }.count, 2)
+    }
+
+    func testFollowFailureStillAllowsUndoOfSuccessfulMove() async {
+        switcher.outcome = .noShortcut
+        switcher.onGo = nil
+        await viewModel.moveWindows([mover.captured], to: desktop(2))
+        XCTAssertTrue(viewModel.canUndoMove)
+        await viewModel.undoLastMove()
+        XCTAssertEqual(mover.destinations, [2, 1])
+    }
+
+    func testClosedWindowDoesNotBlockOlderUndoHistory() async {
+        await viewModel.moveWindows([mover.captured], to: desktop(2), follow: false)
+        mover.rejectedIDs = [42]
+        await viewModel.undoLastMove()
+        XCTAssertFalse(viewModel.canUndoMove)
+        XCTAssertEqual(dialogs.errors.last, "Some windows could not be restored")
+    }
+
+    func testRulesMoveOnlyNewWindowsOnceAndPauseForSessionRestore() async {
+        settings.value.windowRules = [WindowRule(bundleID: "app.editor", appName: "Editor", desktopID: "S2")]
+        var suspended = false
+        let rules = WindowRuleService(store: settings, desktops: viewModel, suspended: { suspended })
+        rules.hasPermission = { true }
+        let original = WindowCandidate(selection: mover.captured, appName: "Editor", title: "Existing", bundleID: "app.editor")
+        mover.listedWindows = [original]
+        await rules.scan()
+        XCTAssertTrue(mover.moved.isEmpty, "Starting rules must not move pre-existing windows")
+        let fresh = WindowCandidate(selection: WindowSelection(id: 43, processID: 123, sourceSpaceID: 1),
+                                    appName: "Editor", title: "New", bundleID: "app.editor")
+        mover.listedWindows.append(fresh)
+        await rules.scan()
+        await rules.scan()
+        XCTAssertEqual(mover.moved.map(\.id), [43], "Manual movement afterward must not trigger the rule again")
+        suspended = true
+        mover.listedWindows.append(WindowCandidate(selection: WindowSelection(id: 44, processID: 123, sourceSpaceID: 1),
+                                                   appName: "Editor", title: "Session", bundleID: "app.editor"))
+        await rules.scan()
+        suspended = false
+        await rules.scan()
+        XCTAssertEqual(mover.moved.map(\.id), [43], "Session-created windows become the new baseline")
+        XCTAssertTrue(viewModel.moveHistory.isEmpty)
+    }
+
+    func testSessionCaptureAndRestoreUsesDesktopAndFrameWithoutMovingOtherWindows() async throws {
+        mover.listedWindows = [WindowCandidate(selection: mover.captured, appName: "Editor", title: "Document", bundleID: "app.editor")]
+        let sessions = WorkspaceSessionService(desktops: viewModel)
+        let captured = try await sessions.capture(launchItems: [])
+        XCTAssertEqual(captured.windows.map(\.desktopID), ["S1"])
+        let frame = CGRect(x: 10, y: 20, width: 500, height: 400)
+        let session = WorkspaceSession(windows: [.init(bundleID: "app.editor", title: "Document", desktopID: "S2", frame: frame)])
+        let errors = await sessions.restore(session)
+        XCTAssertTrue(errors.isEmpty)
+        XCTAssertEqual(mover.frames, [frame])
+        XCTAssertEqual(mover.destinations, [2])
+        XCTAssertTrue(switcher.visits.isEmpty)
+        XCTAssertTrue(viewModel.moveHistory.isEmpty)
+        let missing = WorkspaceSession(windows: [.init(bundleID: "app.editor", title: "Document", desktopID: "missing")])
+        let failed = await sessions.restore(missing)
+        XCTAssertEqual(failed.count, 1)
+        XCTAssertEqual(mover.destinations, [2])
+    }
+
+    func testSessionRetryContainsOnlyFailuresAndUsesExplicitAmbiguousSelection() async {
+        mover.listedWindows = [
+            WindowCandidate(selection: mover.captured, appName: "Editor", title: "Same", bundleID: "app.editor"),
+            WindowCandidate(selection: WindowSelection(id: 43, processID: 123, sourceSpaceID: 1), appName: "Editor", title: "Same", bundleID: "app.editor")]
+        let sessions = WorkspaceSessionService(desktops: viewModel)
+        let first = SavedWindowPlacement(bundleID: "app.editor", title: "Same", desktopID: "S2")
+        let second = SavedWindowPlacement(bundleID: "app.editor", title: "Same", desktopID: "S2")
+        sessions.selections[first.id] = mover.listedWindows[0].selection
+        sessions.selections[second.id] = mover.listedWindows[1].selection
+        mover.rejectedIDs = [43]
+        let errors = await sessions.restore(WorkspaceSession(windows: [first, second]))
+        XCTAssertEqual(errors.count, 1)
+        XCTAssertEqual(sessions.failedSession.windows.map(\.id), [second.id])
+        XCTAssertEqual(mover.moved.map(\.id), [42])
+        mover.rejectedIDs = []
+        let remaining = sessions.failedSession
+        let retryErrors = await sessions.restore(remaining)
+        XCTAssertTrue(retryErrors.isEmpty)
+        XCTAssertEqual(mover.moved.map(\.id), [42, 43])
+    }
+
+    func testFailedSessionRetryNeverReusesAnAlreadyRestoredWindow() async {
+        let sessions = WorkspaceSessionService(desktops: viewModel, matchAttempts: 1)
+        mover.listedWindows = [WindowCandidate(selection: mover.captured, appName: "Editor", title: "First", bundleID: "app.editor")]
+        let session = WorkspaceSession(windows: [
+            .init(bundleID: "app.editor", title: "First", desktopID: "S2"),
+            .init(bundleID: "app.editor", title: "Missing", desktopID: "S2")])
+        let firstErrors = await sessions.restore(session)
+        XCTAssertEqual(firstErrors.count, 1)
+        let remaining = sessions.failedSession
+        let retryErrors = await sessions.restore(remaining, retrying: true)
+        XCTAssertEqual(retryErrors.count, 1)
+        XCTAssertEqual(mover.moved.map(\.id), [42])
+    }
+
+    func testPrivateDesktopSuppressesWindowBadgesAndFailedMovesAreRetryable() async {
+        mover.listedWindows = [WindowCandidate(selection: mover.captured, appName: "Editor", title: "Private Document")]
+        await viewModel.refreshWindowMetadata()
+        XCTAssertEqual(viewModel.windowMetadata(for: desktop(1)).count, 1)
+        settings.value.privateDesktopIDs = ["S1"]
+        XCTAssertTrue(viewModel.windowMetadata(for: desktop(1)).isEmpty)
+        mover.rejectedIDs = [42]
+        await viewModel.moveWindows([mover.captured], to: desktop(2), follow: false)
+        let failed = viewModel.journal.entries[0]
+        XCTAssertNotNil(failed.retry)
+        mover.rejectedIDs = []
+        await viewModel.journal.retry(failed)
+        XCTAssertEqual(mover.moved.map(\.id), [42])
+        XCTAssertTrue(viewModel.canUndoMove)
+    }
+
+    func testPresetRepairChangesOnlyFailedItemsAndDuplicateUsesIndependentIDs() async {
+        let sessions = WorkspaceSessionService(desktops: viewModel)
+        let presets = PresetsViewModel(store: settings, displays: DisplaysViewModel(service: FakeDisplayService(), dialogs: dialogs), sessions: sessions)
+        mover.listedWindows = [WindowCandidate(selection: mover.captured, appName: "Editor", title: "Document", bundleID: "app.editor")]
+        var preset = WorkspacePreset(name: "Work", settings: settings.value)
+        preset.session = WorkspaceSession(windows: [.init(bundleID: "app.editor", title: "Document", desktopID: "missing")])
+        settings.value.presets = [preset]
+        do { try await presets.applyAndWait(preset); XCTFail("Missing desktop must fail") } catch {}
+        XCTAssertFalse(presets.isApplying)
+        XCTAssertEqual(presets.failedSession.windows.count, 1)
+        preset.session?.windows[0].desktopID = "S2"
+        presets.update(preset)
+        XCTAssertEqual(presets.failedSession.windows[0].desktopID, "S2")
+        await presets.retryFailed()
+        XCTAssertTrue(presets.failedSession.windows.isEmpty)
+        XCTAssertEqual(mover.moved.map(\.id), [42])
+        presets.duplicate(preset)
+        XCTAssertNotEqual(presets.presets[0].id, presets.presets[1].id)
+        XCTAssertNotEqual(presets.presets[0].session?.windows[0].id, presets.presets[1].session?.windows[0].id)
     }
 
     func testMenuListsNamedDestinations() {

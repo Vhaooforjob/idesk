@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.3.0 — 2026-10-23
+
+- Unify desktop, window, preset and action search in the command palette, including groups, tags, favorites, pinned commands and recent history.
+- Show privacy-aware app/window badges on desktop cards and accept validated picker drag-and-drop moves.
+- Find minimized windows and restore them on activation; keep them excluded from move/arrangement operations until restored.
+- Add proportional session layouts, preset editing/duplication, explicit ambiguous-window matching and failure-only retries that exclude already restored windows.
+- Add quick window arrangements with independent geometry undo and resize verification.
+- Add four App Intents/App Shortcuts, opt-in context preset triggers, and AX event-driven window rules with a slower fallback scan.
+- Add an in-memory operation journal, content-free diagnostic export and GitHub release checks. Signed automatic installation awaits release configuration.
+- Add per-desktop UUID-based shortcuts and configurable Undo Window Move shortcut.
+- Search and focus regular windows across desktops; move multiple windows or an application's windows, with partial-success undo history.
+- Add scrollable and grid Desktop Line layouts alongside fit-to-width mode.
+- Export/import versioned settings with explicit desktop mapping and disabled imported rules.
+- Save workspace launch items and window placements in presets; restore unique matches with per-item failure reporting.
+- Route new windows by application/title using opt-in rules, with session/sleep suspension.
+- Hide and purge previews per desktop, including pending captures and picker thumbnails.
+- Surface settings write failures and retry from Settings.
+- Keep grid retry positions and avoid cancelling in-flight window-rule verification when another AX event arrives.
+- Add Vietnamese translations, regression coverage and UI render fixtures for the new workflows.
+
 ## v1.2.1 — 2026-10-21
 
 - Restore the native macOS menu bar foreground for the iDesk icon and desktop name, fixing black text on a light-text menu bar introduced in v1.2.0.

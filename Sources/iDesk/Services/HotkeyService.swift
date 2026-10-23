@@ -5,7 +5,12 @@ import Combine
 /// System-wide shortcuts through Carbon, as in iSnap's GlobalHotkeyService.
 @MainActor
 final class HotkeyService: ObservableObject {
-    enum Action: UInt32 { case toggleLine = 1, renameCurrent = 2, restoreDisplays = 3, moveWindow = 4, searchDesktops = 5, previousDesktop = 6 }
+    enum Action: Hashable {
+        case toggleLine, renameCurrent, restoreDisplays, moveWindow, searchDesktops, previousDesktop, undoMove
+        case desktop(String)
+        var sortKey: String { String(describing: self) }
+    }
+    private var registeredActions: [UInt32: Action] = [:]
 
     @Published private(set) var errors: [Action: String] = [:]
     static let recordingChanged = Notification.Name("iDeskShortcutRecordingChanged")
@@ -43,8 +48,9 @@ final class HotkeyService: ObservableObject {
                 )
                 guard status == noErr else { return status }
                 let service = Unmanaged<HotkeyService>.fromOpaque(userData).takeUnretainedValue()
+                let action = service.registeredActions[identifier.id]
                 Task { @MainActor in
-                    if let action = Action(rawValue: identifier.id) { service.onAction?(action) }
+                    if let action { service.onAction?(action) }
                 }
                 return noErr
             },
@@ -64,9 +70,10 @@ final class HotkeyService: ObservableObject {
         self.shortcuts = shortcuts
         references.forEach { if let ref = $0 { UnregisterEventHotKey(ref) } }
         references.removeAll()
+        registeredActions.removeAll()
         errors = Self.validationErrors(shortcuts)
         guard !recording else { return }
-        for (action, shortcut) in shortcuts.sorted(by: { $0.key.rawValue < $1.key.rawValue }) where errors[action] == nil {
+        for (action, shortcut) in shortcuts.sorted(by: { $0.key.sortKey < $1.key.sortKey }) where errors[action] == nil {
             register(shortcut, action: action)
         }
     }
@@ -74,7 +81,9 @@ final class HotkeyService: ObservableObject {
     private func register(_ shortcut: String, action: Action) {
         guard let parsed = Self.parse(shortcut) else { return }
         var reference: EventHotKeyRef?
-        let hotkeyID = EventHotKeyID(signature: signature, id: action.rawValue)
+        let id = UInt32(registeredActions.count + 1)
+        registeredActions[id] = action
+        let hotkeyID = EventHotKeyID(signature: signature, id: id)
         guard RegisterEventHotKey(parsed.keyCode, parsed.modifiers, hotkeyID, GetApplicationEventTarget(), 0, &reference) == noErr else {
             errors[action] = String(localized: "This shortcut could not be registered. Choose another combination.")
             return
@@ -107,9 +116,12 @@ final class HotkeyService: ObservableObject {
     }
 
     static func shortcuts(in settings: AppSettings) -> [Action: String] {
-        [.toggleLine: settings.toggleLineHotkey, .renameCurrent: settings.renameHotkey,
+        var result: [Action: String] = [.toggleLine: settings.toggleLineHotkey, .renameCurrent: settings.renameHotkey,
          .restoreDisplays: settings.restoreDisplaysHotkey, .moveWindow: settings.moveWindowHotkey,
-         .searchDesktops: settings.searchDesktopsHotkey, .previousDesktop: settings.previousDesktopHotkey]
+         .searchDesktops: settings.searchDesktopsHotkey, .previousDesktop: settings.previousDesktopHotkey,
+         .undoMove: settings.undoMoveHotkey]
+        for (id, shortcut) in settings.desktopHotkeys { result[.desktop(id)] = shortcut }
+        return result
     }
 
     /// Reads shortcuts written like "⌃⌥D" or "ctrl+option+D".

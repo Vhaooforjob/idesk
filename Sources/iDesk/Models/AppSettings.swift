@@ -159,6 +159,12 @@ struct AppSettings: Codable, Equatable {
     /// Desktop names by Space UUID. A missing or empty name means the
     /// default "Desktop N".
     var names: [String: String] = [:]
+    var desktopHotkeys: [String: String] = [:]
+    var undoMoveHotkey = "⌃⌥Z"
+    var lineLayout: DesktopLineLayout = .scroll
+    var privateDesktopIDs: Set<String> = []
+    var windowRules: [WindowRule] = []
+    var workspace = WorkspacePreferences()
 
     init() {}
 
@@ -186,6 +192,12 @@ struct AppSettings: Codable, Equatable {
         appearances = (try? c.decode([String: DesktopAppearance].self, forKey: .appearances)) ?? d.appearances
         presets = (try? c.decode([WorkspacePreset].self, forKey: .presets)) ?? d.presets
         names = (try? c.decode([String: String].self, forKey: .names)) ?? d.names
+        desktopHotkeys = (try? c.decode([String: String].self, forKey: .desktopHotkeys)) ?? d.desktopHotkeys
+        undoMoveHotkey = (try? c.decode(String.self, forKey: .undoMoveHotkey)) ?? d.undoMoveHotkey
+        lineLayout = (try? c.decode(DesktopLineLayout.self, forKey: .lineLayout)) ?? d.lineLayout
+        privateDesktopIDs = (try? c.decode(Set<String>.self, forKey: .privateDesktopIDs)) ?? []
+        windowRules = (try? c.decode([WindowRule].self, forKey: .windowRules)) ?? []
+        workspace = (try? c.decode(WorkspacePreferences.self, forKey: .workspace)) ?? WorkspacePreferences()
     }
 
     func name(for space: DesktopSpace) -> String {

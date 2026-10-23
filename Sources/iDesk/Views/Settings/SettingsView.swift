@@ -14,8 +14,21 @@ struct SettingsView: View {
                 .tabItem { Label("Screens", systemImage: "display.2") }
             PresetsTab(viewModel: viewModel.presets, displays: viewModel.screens)
                 .tabItem { Label("Presets", systemImage: "slider.horizontal.3") }
+            AutomationTab(viewModel: viewModel)
+                .tabItem { Label("Rules", systemImage: "arrow.triangle.branch") }
+            WorkspaceToolsTab(model: viewModel, journal: viewModel.journal, updates: viewModel.updates)
+                .tabItem { Label("Workspace", systemImage: "wrench.and.screwdriver") }
             GeneralTab(viewModel: viewModel)
                 .tabItem { Label("General", systemImage: "gearshape") }
+        }
+        .background(Color(nsColor: .windowBackgroundColor))
+        .safeAreaInset(edge: .bottom) {
+            if let error = viewModel.saveError {
+                HStack {
+                    Text(String(localized: "Settings could not be saved") + ": " + error).foregroundStyle(.red)
+                    Button("Retry", action: viewModel.retrySave)
+                }.padding(8)
+            }
         }
         .padding(16)
         .frame(minWidth: 680, minHeight: 520)
@@ -123,6 +136,22 @@ private struct DesktopRowView: View {
                         ForEach(DesktopAppearance.symbols, id: \.self) { Image(systemName: $0).tag($0) }
                     }.frame(width: 100)
                 }
+                HStack {
+                    ShortcutRecorder(value: Binding(
+                        get: { viewModel.settings.desktopHotkeys[space.id] ?? "" },
+                        set: { viewModel.settings.desktopHotkeys[space.id] = $0.isEmpty ? nil : $0 }
+                    )).frame(width: 145, height: 24).accessibilityLabel("Desktop shortcut")
+                    Toggle("Private preview", isOn: Binding(
+                        get: { viewModel.settings.privateDesktopIDs.contains(space.id) },
+                        set: { if $0 { viewModel.settings.privateDesktopIDs.insert(space.id) } else { viewModel.settings.privateDesktopIDs.remove(space.id) } }
+                    )).toggleStyle(.checkbox)
+                }
+                HStack {
+                    TextField("Group", text: Binding(get: { viewModel.settings.workspace.organization[space.id]?.group ?? "" }, set: { viewModel.settings.workspace.organization[space.id, default: DesktopOrganization()].group = $0 }))
+                    TextField("Tags", text: Binding(get: { viewModel.settings.workspace.organization[space.id]?.tags ?? "" }, set: { viewModel.settings.workspace.organization[space.id, default: DesktopOrganization()].tags = $0 }))
+                    Toggle("Favorite", isOn: Binding(get: { viewModel.settings.workspace.organization[space.id]?.favorite ?? false }, set: { viewModel.settings.workspace.organization[space.id, default: DesktopOrganization()].favorite = $0 })).toggleStyle(.checkbox)
+                }
+                if let error = viewModel.shortcutErrors[.desktop(space.id)] { Text(error).font(.caption).foregroundStyle(.red) }
                 if let date = viewModel.previewDate(for: space) {
                     Text("Captured \(date.formatted(date: .abbreviated, time: .shortened))")
                         .font(.caption2).foregroundStyle(.secondary)
@@ -357,6 +386,9 @@ private struct GeneralTab: View {
     var body: some View {
         Form {
             Section("Desktop Line") {
+                Picker("Desktop layout", selection: $viewModel.settings.lineLayout) {
+                    ForEach(DesktopLineLayout.allCases) { Text($0.title).tag($0) }
+                }
                 Picker("Show the line", selection: $viewModel.settings.visibility) {
                     ForEach(LineVisibility.allCases) { Text($0.title).tag($0) }
                 }
@@ -372,14 +404,16 @@ private struct GeneralTab: View {
             Section("Shortcuts") {
                 shortcut("Show or hide the line", action: .toggleLine, value: $viewModel.settings.toggleLineHotkey)
                 shortcut("Rename current desktop", action: .renameCurrent, value: $viewModel.settings.renameHotkey)
-                shortcut("Find Desktop", action: .searchDesktops, value: $viewModel.settings.searchDesktopsHotkey)
+                shortcut("Command Palette", action: .searchDesktops, value: $viewModel.settings.searchDesktopsHotkey)
                 shortcut("Previous Desktop", action: .previousDesktop, value: $viewModel.settings.previousDesktopHotkey)
+                shortcut("Undo Window Move", action: .undoMove, value: $viewModel.settings.undoMoveHotkey)
                 shortcut("Open window picker", action: .moveWindow, value: $viewModel.settings.moveWindowHotkey)
                 shortcut("Turn every screen back on", action: .restoreDisplays, value: $viewModel.settings.restoreDisplaysHotkey)
                 Text("Click a shortcut and press keys. Esc cancels; Delete clears it.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Preview Storage") {
+                Toggle("Show app icons and window counts", isOn: $viewModel.settings.workspace.showsWindowBadges)
                 Toggle("Save previews on disk", isOn: $viewModel.settings.storesPreviewsOnDisk)
                 Text("Turn off to keep previews only in memory and remove saved preview files.")
                     .font(.caption).foregroundStyle(.secondary)
@@ -399,6 +433,9 @@ private struct GeneralTab: View {
                     isGranted: viewModel.canCapture,
                     action: viewModel.allowPreviews
                 )
+            }
+            Section("Backup and Restore") {
+                SettingsTransferView(viewModel: viewModel)
             }
             Section("Startup") {
                 Toggle("Open iDesk at login", isOn: launchAtLogin)

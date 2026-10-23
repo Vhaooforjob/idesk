@@ -15,15 +15,37 @@ final class WindowPickerViewModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
     @Published private(set) var needsPermission = false
+    @Published private(set) var canUndoArrangement = false
+    private var readUndoArrangement: () -> Bool = { false }
     @Published var query = "" { didSet { reconcileWindowSelection() } }
     @Published var selectedWindowID: CGWindowID? {
         didSet { if oldValue != selectedWindowID { updateDestinations() } }
     }
     @Published var selectedDestinationID: String?
+    @Published var checkedWindowIDs: Set<CGWindowID> = [] { didSet { updateDestinations() } }
+
+    @Published var desktopFilter: Int? { didSet { reconcileWindowSelection() } }
+
+    var selectedWindows: [WindowCandidate] {
+        if !checkedWindowIDs.isEmpty { return filteredWindows.filter { checkedWindowIDs.contains($0.id) } }
+        return selectedWindow.map { [$0] } ?? []
+    }
+
+    var batchRequest: (windows: [WindowSelection], destination: DesktopSpace)? {
+        guard !isLoading, errorMessage == nil, !selectedWindows.isEmpty,
+              let target = destinations.first(where: { $0.id == selectedDestinationID }) else { return nil }
+        return (selectedWindows.map(\.selection), target.space)
+    }
+
+    func selectApplicationWindows() {
+        guard let selectedWindow else { return }
+        checkedWindowIDs = Set(filteredWindows.filter { $0.selection.processID == selectedWindow.selection.processID }.map(\.id))
+    }
 
     private let readWindows: () async throws -> [WindowCandidate]
     private let readDestinations: (WindowSelection) -> [WindowDestination]
     private var generation = 0
+    private var cancellables: Set<AnyCancellable> = []
 
     init(readWindows: @escaping () async throws -> [WindowCandidate],
          readDestinations: @escaping (WindowSelection) -> [WindowDestination]) {
@@ -38,10 +60,13 @@ final class WindowPickerViewModel: ObservableObject {
                 WindowDestination(space: $0, name: desktops.name(for: $0), preview: desktops.thumbnail(for: $0))
             }
         })
+        readUndoArrangement = { desktops.canUndoArrangement }
+        desktops.changes.sink { [weak self] in self?.updateDestinations() }.store(in: &cancellables)
     }
 
     var filteredWindows: [WindowCandidate] {
         let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let windows = windows.filter { desktopFilter == nil || $0.selection.sourceSpaceID == desktopFilter }
         guard !text.isEmpty else { return windows }
         return windows.filter { $0.title.localizedStandardContains(text) || $0.appName.localizedStandardContains(text) }
     }
@@ -59,14 +84,17 @@ final class WindowPickerViewModel: ObservableObject {
         guard !Task.isCancelled else { return }
         generation += 1
         let request = generation
+        canUndoArrangement = readUndoArrangement()
         isLoading = true
         errorMessage = nil
         needsPermission = false
+        checkedWindowIDs = []
         windows = []
         selectedWindowID = nil
         destinations = []
         selectedDestinationID = nil
         query = ""
+        desktopFilter = nil
         defer { if request == generation { isLoading = false } }
         do {
             let fresh = try await readWindows()
@@ -97,13 +125,20 @@ final class WindowPickerViewModel: ObservableObject {
     }
 
     private func reconcileWindowSelection() {
+        checkedWindowIDs.formIntersection(Set(filteredWindows.map(\.id)))
         if !filteredWindows.contains(where: { $0.id == selectedWindowID }) {
             selectedWindowID = filteredWindows.first?.id
         }
     }
 
     private func updateDestinations() {
-        destinations = selectedWindow.map { readDestinations($0.selection) } ?? []
+        let selected = selectedWindows
+        guard !selected.contains(where: \.isMinimized) else { destinations = []; selectedDestinationID = nil; return }
+        destinations = selected.first.map { readDestinations($0.selection) } ?? []
+        for window in selected.dropFirst() {
+            let allowed = Set(readDestinations(window.selection).map(\.id))
+            destinations.removeAll { !allowed.contains($0.id) }
+        }
         if !destinations.contains(where: { $0.id == selectedDestinationID }) {
             selectedDestinationID = destinations.first?.id
         }

@@ -8,14 +8,19 @@ struct WindowPickerView: View {
     let cancel: () -> Void
     let refresh: () -> Void
     let openAccessibility: () -> Void
+    var activate: () -> Void = {}
+    var undo: () -> Void = {}
+    var canUndo = false
+    var arrange: (WindowArrangement) -> Void = { _ in }
+    var undoArrangement: () -> Void = {}
     @FocusState private var searchFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Move a Window").font(.title2.bold())
-                    Text("Choose a window, then its destination desktop.")
+                    Text("Find and Move Windows").font(.title2.bold())
+                    Text("Find windows across desktops. Check several to move them together.")
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -38,7 +43,7 @@ struct WindowPickerView: View {
                         guard press.modifiers.contains(.command) else { return .ignored }
                         viewModel.stepDestination(1); return .handled
                     }
-                    .onSubmit { if viewModel.moveRequest != nil { submit() } }
+                    .onSubmit { if viewModel.batchRequest != nil { submit() } }
             }
             .padding(10)
             .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
@@ -61,7 +66,7 @@ struct WindowPickerView: View {
                         Text("Window").font(.headline)
                         if viewModel.filteredWindows.isEmpty {
                             Text(viewModel.windows.isEmpty
-                                ? String(localized: "No movable windows on the current desktops. Open a regular application window, then refresh.")
+                                ? String(localized: "No regular windows found. Open or unminimize an application window, then refresh.")
                                 : String(localized: "No matching windows."))
                                 .foregroundStyle(.secondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -69,6 +74,10 @@ struct WindowPickerView: View {
                             List(selection: $viewModel.selectedWindowID) {
                                 ForEach(viewModel.filteredWindows) { window in
                                     HStack(spacing: 10) {
+                                        Toggle("Select window", isOn: Binding(
+                                            get: { viewModel.checkedWindowIDs.contains(window.id) },
+                                            set: { if $0 { viewModel.checkedWindowIDs.insert(window.id) } else { viewModel.checkedWindowIDs.remove(window.id) } }
+                                        )).labelsHidden().toggleStyle(.checkbox)
                                         if let icon = window.icon {
                                             Image(nsImage: icon).resizable().frame(width: 32, height: 32)
                                         } else {
@@ -76,13 +85,18 @@ struct WindowPickerView: View {
                                         }
                                         VStack(alignment: .leading, spacing: 3) {
                                             Text(window.title).lineLimit(2)
-                                            Text(window.appName).font(.caption).foregroundStyle(.secondary)
+                                            if window.isMinimized { Text("Minimized · Go to Window to restore").font(.caption).foregroundStyle(.secondary) }
+                                            Text(window.desktopName.isEmpty ? window.appName : window.appName + " · " + window.desktopName).font(.caption).foregroundStyle(.secondary)
                                         }
                                         Spacer(minLength: 0)
                                     }
                                     .padding(.vertical, 5)
                                     .tag(window.id)
                                     .help(window.title)
+                                    .onDrag {
+                                        if !viewModel.checkedWindowIDs.contains(window.id) { viewModel.checkedWindowIDs = []; viewModel.selectedWindowID = window.id }
+                                        return WindowDragSession.shared.begin(windows: viewModel.selectedWindows, destinations: viewModel.destinations)
+                                    }
                                 }
                             }
                             .listStyle(.inset)
@@ -112,6 +126,21 @@ struct WindowPickerView: View {
                 }
                 .frame(maxHeight: .infinity)
             }
+            HStack {
+                Button("Select App Windows") { viewModel.selectApplicationWindows() }.disabled(viewModel.selectedWindow == nil)
+                Button("Clear Selection") { viewModel.checkedWindowIDs = [] }.disabled(viewModel.checkedWindowIDs.isEmpty)
+                Spacer()
+                Button("Undo Move", action: undo).disabled(!canUndo)
+                Button("Go to Window", action: activate).disabled(viewModel.selectedWindow == nil || viewModel.isLoading)
+            }
+            HStack {
+                Menu("Arrange Windows") {
+                    ForEach(WindowArrangement.allCases) { layout in Button(layout.title) { arrange(layout) } }
+                }.disabled(viewModel.selectedWindows.isEmpty || viewModel.selectedWindows.contains(where: \.isMinimized))
+                Button("Undo Arrangement", action: undoArrangement).disabled(!viewModel.canUndoArrangement)
+                Spacer()
+                Text("Drag windows onto desktop cards").font(.caption).foregroundStyle(.secondary)
+            }
             Divider()
             Text("⌘←/→ destination · Return to move · Esc to close").font(.caption).foregroundStyle(.secondary)
             HStack {
@@ -121,11 +150,11 @@ struct WindowPickerView: View {
                 Button(follow ? String(localized: "Move and Follow") : String(localized: "Move"), action: submit)
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.defaultAction)
-                    .disabled(viewModel.moveRequest == nil)
+                    .disabled(viewModel.batchRequest == nil)
             }
         }
         .padding(20)
-        .frame(width: 720, height: 480)
+        .frame(width: 780, height: 590)
         .background(Color(nsColor: .windowBackgroundColor))
         .onAppear { searchFocused = true }
         .onChange(of: viewModel.isLoading) { _, loading in

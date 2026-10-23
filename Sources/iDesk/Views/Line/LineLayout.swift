@@ -62,7 +62,7 @@ enum LineLayout {
     /// Cards move closer together, and shrink, when many desktops share a
     /// narrow screen.
     static func spacing(count: Int, width: CGFloat) -> CGFloat {
-        min(spacing, (width - 60) / CGFloat(max(count, 1)))
+        min(spacing, max(0, width - 60) / CGFloat(max(count, 1)))
     }
 
     static func scale(count: Int, width: CGFloat) -> CGFloat {

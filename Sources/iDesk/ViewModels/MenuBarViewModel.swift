@@ -160,6 +160,10 @@ final class MenuBarViewModel: ObservableObject {
     }
 
     func appearance(for space: DesktopSpace) -> DesktopAppearance { settingsStore.value.appearances[space.id] ?? DesktopAppearance() }
+    var canUndoMove: Bool { desktops.canUndoMove }
+    func undoMove() { Task { await desktops.undoLastMove() } }
+    var undoShortcut: String { settingsStore.value.undoMoveHotkey }
+    func desktopShortcut(_ space: DesktopSpace) -> String { settingsStore.value.desktopHotkeys[space.id] ?? "" }
     func previousDesktop() { desktops.goToPreviousDesktop() }
     var searchShortcut: String { settingsStore.value.searchDesktopsHotkey }
     var previousShortcut: String { settingsStore.value.previousDesktopHotkey }

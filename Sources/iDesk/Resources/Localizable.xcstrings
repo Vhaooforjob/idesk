@@ -2190,6 +2190,1486 @@
           }
         }
       }
+    },
+    "A window operation is already running. Try again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang có thao tác với cửa sổ. Vui lòng thử lại."
+          }
+        }
+      }
+    },
+    "Add Apps or Folders…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm ứng dụng hoặc thư mục…"
+          }
+        }
+      }
+    },
+    "Add Rule": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm quy tắc"
+          }
+        }
+      }
+    },
+    "Add URL": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm URL"
+          }
+        }
+      }
+    },
+    "All new windows": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mọi cửa sổ mới"
+          }
+        }
+      }
+    },
+    "Allow Accessibility to enable window rules.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cho phép Trợ năng để dùng quy tắc cửa sổ."
+          }
+        }
+      }
+    },
+    "Backup and Restore": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sao lưu và khôi phục"
+          }
+        }
+      }
+    },
+    "Backups include names, shortcuts, rules and session paths. Preview images are excluded.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản sao lưu gồm tên, phím tắt, quy tắc và đường dẫn trong phiên làm việc. Không chứa ảnh xem trước."
+          }
+        }
+      }
+    },
+    "Choose Application…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn ứng dụng…"
+          }
+        }
+      }
+    },
+    "Choose a desktop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn desktop"
+          }
+        }
+      }
+    },
+    "Choose an application with a bundle identifier.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn ứng dụng có mã định danh hợp lệ."
+          }
+        }
+      }
+    },
+    "Clear Selection": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ chọn"
+          }
+        }
+      }
+    },
+    "Could not clear private previews": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể xóa ảnh xem trước riêng tư"
+          }
+        }
+      }
+    },
+    "Could not open the window": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể mở cửa sổ"
+          }
+        }
+      }
+    },
+    "Could not open this item.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể mở mục này."
+          }
+        }
+      }
+    },
+    "Delete rule": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa quy tắc"
+          }
+        }
+      }
+    },
+    "Desktop Grid": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưới desktop"
+          }
+        }
+      }
+    },
+    "Desktop layout": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bố cục desktop"
+          }
+        }
+      }
+    },
+    "Desktop shortcut": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phím tắt desktop"
+          }
+        }
+      }
+    },
+    "Desktop unavailable": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desktop không khả dụng"
+          }
+        }
+      }
+    },
+    "Enter an HTTP(S) URL.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập URL HTTP hoặc HTTPS."
+          }
+        }
+      }
+    },
+    "Export Settings…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xuất cấu hình…"
+          }
+        }
+      }
+    },
+    "Find and Move Windows": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm và chuyển cửa sổ"
+          }
+        }
+      }
+    },
+    "Find and Move Windows…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm và chuyển cửa sổ…"
+          }
+        }
+      }
+    },
+    "Find windows across desktops. Check several to move them together.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm cửa sổ trên các desktop. Đánh dấu nhiều cửa sổ để chuyển cùng lúc."
+          }
+        }
+      }
+    },
+    "Fit All Desktops": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thu gọn mọi desktop"
+          }
+        }
+      }
+    },
+    "Go to Window": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đến cửa sổ"
+          }
+        }
+      }
+    },
+    "Import": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập"
+          }
+        }
+      }
+    },
+    "Import Settings…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập cấu hình…"
+          }
+        }
+      }
+    },
+    "Import replaces settings. Match each saved desktop or skip it. Imported rules start disabled; sessions only run when you apply a preset.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập sẽ thay thế cấu hình. Ghép từng desktop đã lưu hoặc bỏ qua. Quy tắc nhập vào được tắt; phiên làm việc chỉ chạy khi bạn áp dụng preset."
+          }
+        }
+      }
+    },
+    "Invalid address.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Địa chỉ không hợp lệ."
+          }
+        }
+      }
+    },
+    "Invalid backup, unsupported version, or duplicate desktop mapping.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản sao lưu không hợp lệ, phiên bản không hỗ trợ hoặc ghép trùng desktop."
+          }
+        }
+      }
+    },
+    "Match Desktops": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghép desktop"
+          }
+        }
+      }
+    },
+    "Move new windows to a desktop without following them. Rules use the first matching app and title. Windows stay on the same display; full screen and minimized windows are excluded.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển cửa sổ mới đến desktop mà không đi theo. Dùng quy tắc đầu tiên khớp ứng dụng và tiêu đề. Cửa sổ chỉ chuyển trong cùng màn hình; bỏ qua cửa sổ toàn màn hình và thu nhỏ."
+          }
+        }
+      }
+    },
+    "New Window Rule": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quy tắc cửa sổ mới"
+          }
+        }
+      }
+    },
+    "No regular windows found. Open or unminimize an application window, then refresh.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không tìm thấy cửa sổ thông thường. Mở hoặc khôi phục cửa sổ đã thu nhỏ, rồi làm mới."
+          }
+        }
+      }
+    },
+    "No unique matching window. Open the document and apply the preset again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không xác định được cửa sổ phù hợp duy nhất. Mở tài liệu rồi áp dụng lại preset."
+          }
+        }
+      }
+    },
+    "No window rules yet.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có quy tắc cửa sổ."
+          }
+        }
+      }
+    },
+    "Private preview": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ẩn ảnh xem trước"
+          }
+        }
+      }
+    },
+    "Remember Open Window Layout": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghi nhớ bố cục cửa sổ đang mở"
+          }
+        }
+      }
+    },
+    "Retry": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thử lại"
+          }
+        }
+      }
+    },
+    "Rules": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quy tắc"
+          }
+        }
+      }
+    },
+    "Rules apply to newly discovered windows. To reposition existing windows, use Find and Move Windows. Disabling a rule does not undo earlier moves.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quy tắc áp dụng cho cửa sổ mới phát hiện. Dùng Tìm và chuyển cửa sổ để chuyển cửa sổ hiện có. Tắt quy tắc không hoàn tác các lần chuyển trước."
+          }
+        }
+      }
+    },
+    "Scrollable Line": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dây desktop cuộn ngang"
+          }
+        }
+      }
+    },
+    "Select App Windows": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn cửa sổ cùng ứng dụng"
+          }
+        }
+      }
+    },
+    "Select window": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn cửa sổ"
+          }
+        }
+      }
+    },
+    "Settings could not be saved": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không lưu được cấu hình"
+          }
+        }
+      }
+    },
+    "Settings exported.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã xuất cấu hình."
+          }
+        }
+      }
+    },
+    "Settings imported.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã nhập cấu hình."
+          }
+        }
+      }
+    },
+    "Skip": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ qua"
+          }
+        }
+      }
+    },
+    "Some session items could not be restored": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể khôi phục một số mục của phiên làm việc"
+          }
+        }
+      }
+    },
+    "Some windows could not be restored": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể khôi phục một số cửa sổ"
+          }
+        }
+      }
+    },
+    "Undo Move": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoàn tác chuyển"
+          }
+        }
+      }
+    },
+    "Undo Window Move": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoàn tác chuyển cửa sổ"
+          }
+        }
+      }
+    },
+    "Use a file, folder, application, or HTTP(S) URL.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn tệp, thư mục, ứng dụng hoặc URL HTTP(S)."
+          }
+        }
+      }
+    },
+    "Window Rules": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quy tắc cửa sổ"
+          }
+        }
+      }
+    },
+    "Window layouts match apps and titles. Apps restore their own documents; missing or ambiguous windows are reported. Moves stay on the same display.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bố cục khớp theo ứng dụng và tiêu đề. Ứng dụng tự khôi phục tài liệu; iDesk báo cửa sổ thiếu hoặc không xác định được. Chỉ chuyển trong cùng màn hình."
+          }
+        }
+      }
+    },
+    "Window title contains (optional)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiêu đề cửa sổ chứa (không bắt buộc)"
+          }
+        }
+      }
+    },
+    "Preparing workspace…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chuẩn bị phiên làm việc…"
+          }
+        }
+      }
+    },
+    "%lld items · %lld windows": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld mục · %lld cửa sổ"
+          }
+        }
+      }
+    },
+    "Increase rule priority": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tăng ưu tiên quy tắc"
+          }
+        }
+      }
+    },
+    "2 × 2 Grid": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưới 2 × 2"
+          }
+        }
+      }
+    },
+    "A new version is available.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã có phiên bản mới."
+          }
+        }
+      }
+    },
+    "Action": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thao tác"
+          }
+        }
+      }
+    },
+    "Add Context Rule": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm quy tắc ngữ cảnh"
+          }
+        }
+      }
+    },
+    "Add Launch Item": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm mục khởi chạy"
+          }
+        }
+      }
+    },
+    "Address": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Địa chỉ"
+          }
+        }
+      }
+    },
+    "All": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tất cả"
+          }
+        }
+      }
+    },
+    "App Launched": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ứng dụng được mở"
+          }
+        }
+      }
+    },
+    "Center": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Căn giữa"
+          }
+        }
+      }
+    },
+    "Check for Updates": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểm tra cập nhật"
+          }
+        }
+      }
+    },
+    "Clear Results": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa kết quả"
+          }
+        }
+      }
+    },
+    "Command Palette": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bảng lệnh"
+          }
+        }
+      }
+    },
+    "Context Presets": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preset theo ngữ cảnh"
+          }
+        }
+      }
+    },
+    "Copy Diagnostics": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sao chép chẩn đoán"
+          }
+        }
+      }
+    },
+    "Could not check GitHub releases. Try again later.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể kiểm tra bản phát hành GitHub. Hãy thử lại sau."
+          }
+        }
+      }
+    },
+    "Diagnostics": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chẩn đoán"
+          }
+        }
+      }
+    },
+    "Display Connected": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kết nối màn hình"
+          }
+        }
+      }
+    },
+    "Display Disconnected": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngắt màn hình"
+          }
+        }
+      }
+    },
+    "Display Topology Changed": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thay đổi bộ màn hình"
+          }
+        }
+      }
+    },
+    "Download and install releases from GitHub. Automatic installation is not configured.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải và cài bản phát hành từ GitHub. Chưa cấu hình cài đặt tự động."
+          }
+        }
+      }
+    },
+    "Edit and Repair Preset": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉnh sửa và sửa lỗi preset"
+          }
+        }
+      }
+    },
+    "Enabled": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật"
+          }
+        }
+      }
+    },
+    "Event": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sự kiện"
+          }
+        }
+      }
+    },
+    "Favorites": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yêu thích"
+          }
+        }
+      }
+    },
+    "Favorite": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yêu thích"
+          }
+        }
+      }
+    },
+    "First Third": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một phần ba bên trái"
+          }
+        }
+      }
+    },
+    "Group": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhóm"
+          }
+        }
+      }
+    },
+    "Invalid release information.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông tin bản phát hành không hợp lệ."
+          }
+        }
+      }
+    },
+    "Last Two Thirds": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hai phần ba bên phải"
+          }
+        }
+      }
+    },
+    "Left Half": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nửa bên trái"
+          }
+        }
+      }
+    },
+    "Match automatically": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghép cửa sổ tự động"
+          }
+        }
+      }
+    },
+    "Maximize": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lấp đầy vùng làm việc"
+          }
+        }
+      }
+    },
+    "Minimized": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã thu nhỏ"
+          }
+        }
+      }
+    },
+    "Name": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên"
+          }
+        }
+      }
+    },
+    "No newer stable version was found.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không tìm thấy phiên bản ổn định mới hơn."
+          }
+        }
+      }
+    },
+    "Open Release on GitHub": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở bản phát hành trên GitHub"
+          }
+        }
+      }
+    },
+    "Open iDesk and try again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở iDesk rồi thử lại."
+          }
+        }
+      }
+    },
+    "Operation Results": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kết quả thao tác"
+          }
+        }
+      }
+    },
+    "Pause automatic presets": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạm dừng preset tự động"
+          }
+        }
+      }
+    },
+    "Preset": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preset"
+          }
+        }
+      }
+    },
+    "Preset unavailable": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preset không khả dụng"
+          }
+        }
+      }
+    },
+    "Refresh Diagnostics": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Làm mới chẩn đoán"
+          }
+        }
+      }
+    },
+    "Refresh Windows": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Làm mới cửa sổ"
+          }
+        }
+      }
+    },
+    "Results are kept in memory. Diagnostic exports exclude window titles and user content.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kết quả chỉ lưu trong bộ nhớ. Bản chẩn đoán sao chép không chứa tiêu đề cửa sổ và nội dung cá nhân."
+          }
+        }
+      }
+    },
+    "Review targets and launch addresses before saving. Selecting a live window resolves ambiguity for this run; the saved match remains app and title.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểm tra desktop đích và địa chỉ trước khi lưu. Chọn cửa sổ đang mở để xác định cửa sổ cho lần chạy này; quy tắc đã lưu vẫn dựa vào ứng dụng và tiêu đề."
+          }
+        }
+      }
+    },
+    "Right Half": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nửa bên phải"
+          }
+        }
+      }
+    },
+    "Rules wait two seconds, respect cooldowns, and pause while a session is being applied. Higher priority wins. Screen changes retain their confirmation countdown.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quy tắc đợi hai giây, có thời gian chờ giữa các lần chạy và tạm dừng khi áp dụng phiên. Quy tắc ưu tiên cao chạy trước. Thay đổi màn hình vẫn cần xác nhận trong thời gian đếm ngược."
+          }
+        }
+      }
+    },
+    "Run": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạy"
+          }
+        }
+      }
+    },
+    "Save Changes": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu thay đổi"
+          }
+        }
+      }
+    },
+    "Search desktops, windows, actions · > presets · @ apps": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm desktop, cửa sổ, thao tác · > preset · @ ứng dụng"
+          }
+        }
+      }
+    },
+    "Some shortcuts could not be registered. Review General and Desktops.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một số phím tắt chưa đăng ký được. Kiểm tra tab Chung và Desktop."
+          }
+        }
+      }
+    },
+    "Target Desktop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desktop đích"
+          }
+        }
+      }
+    },
+    "Undo Arrangement": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoàn tác bố cục"
+          }
+        }
+      }
+    },
+    "Updates": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cập nhật"
+          }
+        }
+      }
+    },
+    "Window title": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiêu đề cửa sổ"
+          }
+        }
+      }
+    },
+    "↑/↓ · Return · Esc": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "↑/↓ · Return · Esc"
+          }
+        }
+      }
+    },
+    "Tags": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thẻ"
+          }
+        }
+      }
+    },
+    "Show app icons and window counts": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện biểu tượng ứng dụng và số cửa sổ"
+          }
+        }
+      }
+    },
+    "Show Windows": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện cửa sổ"
+          }
+        }
+      }
+    },
+    "Arrange Windows": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sắp xếp cửa sổ"
+          }
+        }
+      }
+    },
+    "Drag windows onto desktop cards": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kéo cửa sổ lên thẻ desktop"
+          }
+        }
+      }
+    },
+    "Minimized · Go to Window to restore": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã thu nhỏ · Chọn Đến cửa sổ để khôi phục"
+          }
+        }
+      }
+    },
+    "Edit…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉnh sửa…"
+          }
+        }
+      }
+    },
+    "Duplicate": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhân bản"
+          }
+        }
+      }
+    },
+    "Copy": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản sao"
+          }
+        }
+      }
+    },
+    "Retry Failed Items": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thử lại các mục lỗi"
+          }
+        }
+      }
+    },
+    "Workspace": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không gian làm việc"
+          }
+        }
+      }
+    },
+    "Choose Matching Window": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn cửa sổ tương ứng"
+          }
+        }
+      }
+    },
+    "Bundle ID (empty matches any app)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bundle ID (để trống để khớp mọi ứng dụng)"
+          }
+        }
+      }
+    },
+    "Display UUIDs, sorted and comma-separated (optional)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UUID màn hình, sắp xếp và cách bằng dấu phẩy (tùy chọn)"
+          }
+        }
+      }
+    },
+    "A workspace operation is already running.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một thao tác không gian làm việc đang chạy."
+          }
+        }
+      }
+    },
+    "Session restoration was cancelled.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã hủy khôi phục phiên."
+          }
+        }
+      }
+    },
+    "The saved display changed. Edit the preset and confirm the target desktop.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Màn hình đã lưu đã thay đổi. Chỉnh sửa preset và xác nhận desktop đích."
+          }
+        }
+      }
+    },
+    "The app did not accept the requested window size or position.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ứng dụng không chấp nhận kích thước hoặc vị trí cửa sổ được yêu cầu."
+          }
+        }
+      }
+    },
+    "Some windows could not be arranged": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể sắp xếp một số cửa sổ"
+          }
+        }
+      }
+    },
+    "Select at most four windows per display for a grid.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn tối đa bốn cửa sổ mỗi màn hình để xếp lưới."
+          }
+        }
+      }
+    },
+    "Installed version: %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phiên bản đã cài: %@"
+          }
+        }
+      }
+    },
+    "Priority: %lld": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Độ ưu tiên: %lld"
+          }
+        }
+      }
+    },
+    "Cooldown: %lld s": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thời gian chờ: %lld giây"
+          }
+        }
+      }
+    },
+    "Position: %lld%%, %lld%% · Size: %lld%% × %lld%%": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vị trí: %lld%%, %lld%% · Kích thước: %lld%% × %lld%%"
+          }
+        }
+      }
+    },
+    "Switch Desktop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển desktop"
+          }
+        }
+      }
+    },
+    "Apply Workspace Preset": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áp dụng preset không gian làm việc"
+          }
+        }
+      }
+    },
+    "Toggle Desktop Line": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ẩn/hiện dây desktop"
+          }
+        }
+      }
+    },
+    "Restore Displays": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khôi phục màn hình"
+          }
+        }
+      }
+    },
+    "Workspace Preset": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preset không gian làm việc"
+          }
+        }
+      }
+    },
+    "Last Third": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một phần ba bên phải"
+          }
+        }
+      }
+    },
+    "First Two Thirds": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hai phần ba bên trái"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

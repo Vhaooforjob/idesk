@@ -48,6 +48,8 @@ struct WorkspacePreset: Codable, Equatable, Identifiable {
     var playsSounds: Bool
     var screens: PresetScreens = .unchanged
     var externalDisplayIdentity: String?
+    var session: WorkspaceSession?
+    var lineLayout: DesktopLineLayout?
 
     init(name: String, settings: AppSettings, screens: PresetScreens = .unchanged) {
         self.name = name
@@ -60,9 +62,11 @@ struct WorkspacePreset: Codable, Equatable, Identifiable {
         showsPreviews = settings.showsPreviews
         playsSounds = settings.playsSounds
         self.screens = screens
+        lineLayout = settings.lineLayout
     }
 
     func apply(to settings: inout AppSettings) {
+        if let lineLayout { settings.lineLayout = lineLayout }
         settings.hangStyle = hangStyle
         settings.sway = sway
         settings.switchEffect = switchEffect

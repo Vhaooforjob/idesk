@@ -111,6 +111,12 @@ final class DesktopLineViewModel: ObservableObject {
         Task { await desktops.moveWindow(selection, to: space) }
     }
 
+    func showWindows(on space: DesktopSpace) { desktops?.showWindows?(space.id) }
+    func dropWindows(_ selections: [WindowSelection], on space: DesktopSpace) {
+        guard let desktops else { return }
+        Task { await desktops.moveWindows(selections, to: space, follow: desktops.settings.followMovedWindow); await desktops.refreshWindowMetadata() }
+    }
+
     func resetName(_ space: DesktopSpace) {
         desktops?.resetName(space)
     }
@@ -157,6 +163,7 @@ final class DesktopLineViewModel: ObservableObject {
         self.screen = screen
         rebuild()
         desktops?.refreshPreview(on: screen)
+        Task { await desktops?.refreshWindowMetadata() }
     }
 
     func setRevealed(_ revealed: Bool) {

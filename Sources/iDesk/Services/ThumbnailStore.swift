@@ -17,6 +17,7 @@ final class ThumbnailStore: ObservableObject {
     @Published private(set) var dates: [String: Date] = [:]
     private(set) var storesOnDisk: Bool
     private var generation = 0
+    private var privateIDs: Set<String> = []
     /// Encoding and writing a picture takes a moment, so it happens here,
     /// one file at a time and in order, instead of on the main thread.
     private let writer = DispatchQueue(label: "dev.idesk.thumbnail-writer", qos: .utility)
@@ -54,6 +55,7 @@ final class ThumbnailStore: ObservableObject {
     /// Photographs the screen as it is now. `stillThere` is asked once the
     /// picture is ready, so a picture taken during a switch is dropped.
     func capture(_ space: DesktopSpace, on screen: NSScreen, force: Bool = false, stillThere: @escaping () -> Bool) {
+        guard !privateIDs.contains(space.id) else { return }
         let displayID = screen.displayID
         let key = CaptureKey(spaceID: space.id, displayID: displayID)
         guard !capturingDisplays.contains(displayID),
@@ -79,6 +81,20 @@ final class ThumbnailStore: ObservableObject {
     }
 
     /// Invalidate in-flight captures before removing files, so Clear cannot be undone by a late result.
+    func setPrivateSpaces(_ ids: Set<String>) throws {
+        privateIDs = ids
+        generation += 1
+        images = images.filter { !ids.contains($0.key) }
+        dates = dates.filter { !ids.contains($0.key) }
+        capturedAt = capturedAt.filter { !ids.contains($0.key.spaceID) }
+        let files = ids.map { url(for: $0) }
+        try writer.sync {
+            for file in files where FileManager.default.fileExists(atPath: file.path) {
+                try FileManager.default.removeItem(at: file)
+            }
+        }
+    }
+
     func clear() throws {
         generation += 1
         images = [:]

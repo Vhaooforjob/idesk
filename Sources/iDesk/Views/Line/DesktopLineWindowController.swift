@@ -278,7 +278,7 @@ final class DesktopLineWindowController {
         let inside = NSMouseInRect(mouse, zone, false)
         if inside && isPinned { isPinned = false }
 
-        let busy = isPinned || CardClickView.isShowingMenu || viewModel.pressedID != nil
+        let busy = isPinned || WindowDragSession.shared.isDragging || CardClickView.isShowingMenu || viewModel.pressedID != nil
         if inside || busy {
             awaySince = nil
         } else {
@@ -295,6 +295,9 @@ final class DesktopLineWindowController {
         guard isPresent else { return false }
         let local = panel.convertPoint(fromScreen: mouse)
         let flipped = CGPoint(x: local.x, y: panel.frame.height - local.y)
+        if viewModel.isRevealed && viewModel.look.layout != .fit {
+            return CGRect(x: 0, y: 0, width: panel.frame.width, height: panel.frame.height).contains(flipped)
+        }
         return viewModel.hitRects.values.contains { $0.insetBy(dx: -4, dy: -4).contains(flipped) }
     }
 

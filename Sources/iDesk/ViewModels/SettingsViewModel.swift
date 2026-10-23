@@ -33,20 +33,29 @@ final class SettingsViewModel: ObservableObject {
 
     @Published private(set) var shortcutErrors: [HotkeyService.Action: String] = [:]
     @Published private(set) var previewError: String?
+    @Published private(set) var saveError: String?
     let presets: PresetsViewModel
+    let windowRules: WindowRuleService?
+    let contextPresets: ContextPresetService?
+    let updates: UpdateService
+    var journal: OperationJournal { desktops.journal }
 
     private let settingsStore: SettingsStore
     private let desktops: DesktopsViewModel
     private var cancellables: Set<AnyCancellable> = []
 
-    init(settingsStore: SettingsStore, desktops: DesktopsViewModel, screens: DisplaysViewModel, hotkeys: HotkeyService? = nil, presets: PresetsViewModel? = nil) {
+    init(settingsStore: SettingsStore, desktops: DesktopsViewModel, screens: DisplaysViewModel, hotkeys: HotkeyService? = nil, presets: PresetsViewModel? = nil, windowRules: WindowRuleService? = nil, contextPresets: ContextPresetService? = nil, updates: UpdateService? = nil) {
+        self.contextPresets = contextPresets
+        self.updates = updates ?? UpdateService()
         self.settingsStore = settingsStore
+        self.windowRules = windowRules
         self.desktops = desktops
         self.screens = screens
         self.presets = presets ?? PresetsViewModel(store: settingsStore, displays: screens)
         settings = settingsStore.value
         preview = DesktopLineViewModel(preview: Self.sampleDesktops, settings: settingsStore.$value.eraseToAnyPublisher())
 
+        settingsStore.$saveError.sink { [weak self] in self?.saveError = $0 }.store(in: &cancellables)
         hotkeys?.$errors.sink { [weak self] in self?.shortcutErrors = $0 }.store(in: &cancellables)
 
         settingsStore.$value
@@ -59,6 +68,15 @@ final class SettingsViewModel: ObservableObject {
             .sink { [weak self] in self?.updateDesktopGroups() }
             .store(in: &cancellables)
         updateDesktopGroups()
+    }
+
+    func retrySave() { settingsStore.retrySave() }
+    func exportSettings() -> SettingsArchive { SettingsArchive(settings: settings, spaces: desktops.spaces) }
+    func importSettings(_ archive: SettingsArchive, mapping: [String: String]) throws {
+        desktops.reload()
+        let value = try archive.mapped(using: mapping, available: Set(desktops.spaces.map(\.id)))
+        try settingsStore.replace(with: value)
+        refresh()
     }
 
     func previewDate(for space: DesktopSpace) -> Date? { desktops.previewDate(for: space) }

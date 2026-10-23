@@ -21,7 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: SettingsWindowController?
     private var menuBar: MenuBarController?
     private var windowPicker: WindowPickerWindowController?
-    private var desktopSearch: DesktopSearchWindowController?
+    private var desktopSearch: CommandPaletteController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let environment = AppEnvironment(dialogs: AlertDialogs())
@@ -31,8 +31,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.settingsWindow = settingsWindow
         let windowPicker = WindowPickerWindowController(desktops: environment.desktops, settingsStore: environment.settingsStore)
         self.windowPicker = windowPicker
+        environment.desktops.showWindows = { [weak windowPicker] in windowPicker?.show(desktopID: $0) }
+        WindowDragSession.shared.onBegin = { [weak environment] in
+            if environment?.line.isRevealed == false { environment?.line.toggle() }
+        }
         environment.showWindowPicker = { [weak windowPicker] in windowPicker?.toggle() }
-        let desktopSearch = DesktopSearchWindowController(desktops: environment.desktops)
+        environment.showSettings = { [weak settingsWindow] in settingsWindow?.show() }
+        let desktopSearch = CommandPaletteController(environment: environment)
         self.desktopSearch = desktopSearch
         environment.showDesktopSearch = { [weak desktopSearch] in desktopSearch?.toggle() }
         menuBar = MenuBarController(viewModel: environment.menuBar, openSettings: settingsWindow.show,

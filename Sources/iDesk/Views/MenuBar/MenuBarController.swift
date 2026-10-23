@@ -75,6 +75,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             for entry in section.entries {
                 let space = entry.space
                 let item = LineMenuItem(entry.title) { [weak self] in self?.viewModel.go(to: space) }
+                item.showShortcut(viewModel.desktopShortcut(space))
                 item.state = space.isCurrent ? .on : .off
                 let appearance = viewModel.appearance(for: space)
                 item.image = NSImage(systemSymbolName: appearance.symbol, accessibilityDescription: nil)?
@@ -89,15 +90,20 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         }
 
         menu.addItem(.separator())
-        let search = LineMenuItem(String(localized: "Find Desktop…")) { [weak self] in self?.openDesktopSearch() }
+        let search = LineMenuItem(String(localized: "Command Palette")) { [weak self] in self?.openDesktopSearch() }
         search.showShortcut(viewModel.searchShortcut)
         menu.addItem(search)
         let previous = LineMenuItem(String(localized: "Previous Desktop")) { [weak self] in self?.viewModel.previousDesktop() }
         previous.showShortcut(viewModel.previousShortcut)
         menu.addItem(previous)
-        let picker = LineMenuItem(String(localized: "Move a Window…")) { [weak self] in self?.openWindowPicker() }
+        let picker = LineMenuItem(String(localized: "Find and Move Windows…")) { [weak self] in self?.openWindowPicker() }
         picker.showShortcut(viewModel.moveWindowShortcut)
         menu.addItem(picker)
+        let undo = LineMenuItem(String(localized: "Undo Window Move")) { [weak self] in self?.viewModel.undoMove() }
+        undo.isEnabled = viewModel.canUndoMove
+        undo.showShortcut(viewModel.undoShortcut)
+        menu.autoenablesItems = false
+        menu.addItem(undo)
         let toggle = LineMenuItem(String(localized: "Show or Hide the Line")) { [weak self] in self?.viewModel.toggleLine() }
         toggle.showShortcut(viewModel.toggleShortcut)
         menu.addItem(toggle)

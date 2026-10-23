@@ -6,6 +6,22 @@ struct PresetsTab: View {
     @State private var name = ""
     @State private var screens: PresetScreens = .unchanged
     @State private var externalID: CGDirectDisplayID?
+    @State private var launchItems: [SessionLaunchItem] = []
+    @State private var captureWindows = false
+    @State private var webAddress = ""
+    @State private var itemError: String?
+    @State private var editing: WorkspacePreset?
+
+    private func chooseItems() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = true
+        guard panel.runModal() == .OK else { return }
+        for url in panel.urls where !launchItems.contains(where: { $0.address == url.absoluteString }) {
+            launchItems.append(SessionLaunchItem(address: url.absoluteString, name: url.lastPathComponent))
+        }
+    }
 
     var body: some View {
         Form {
@@ -34,9 +50,34 @@ struct PresetsTab: View {
                         ForEach(displays.externals) { Text($0.name).tag(Optional($0.id)) }
                     }
                 }
+                Toggle("Remember Open Window Layout", isOn: $captureWindows)
+                Text("Window layouts match apps and titles. Apps restore their own documents; missing or ambiguous windows are reported. Moves stay on the same display.")
+                    .font(.caption).foregroundStyle(.secondary)
+                HStack {
+                    Button("Add Apps or Folders…", action: chooseItems)
+                    TextField("https://…", text: $webAddress)
+                    Button("Add URL") {
+                        let item = SessionLaunchItem(address: webAddress.trimmingCharacters(in: .whitespacesAndNewlines), name: webAddress)
+                        guard let url = item.url, !url.isFileURL else { itemError = String(localized: "Enter an HTTP(S) URL."); return }
+                        launchItems.append(item)
+                        webAddress = ""
+                        itemError = nil
+                    }
+                }
+                ForEach(launchItems) { item in
+                    HStack {
+                        Text(item.name).lineLimit(1).help(item.address)
+                        Spacer()
+                        Button { launchItems.removeAll { $0.id == item.id } } label: { Image(systemName: "minus.circle") }
+                    }
+                }
+                if let itemError { Text(itemError).foregroundStyle(.red) }
                 Button("Save Preset") {
-                    viewModel.save(name: name, screens: screens, externalID: externalID)
-                    if viewModel.errorMessage == nil { name = "" }
+                    Task {
+                        await viewModel.saveSession(name: name, screens: screens, externalID: externalID,
+                                                    launchItems: launchItems, captureWindows: captureWindows)
+                        if viewModel.errorMessage == nil { name = ""; launchItems = []; captureWindows = false }
+                    }
                 }
                 .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
                           (screens == .externalOnly && externalID == nil))
@@ -51,7 +92,12 @@ struct PresetsTab: View {
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
+                            if let session = preset.session {
+                                Text("\(session.launchItems.count) items · \(session.windows.count) windows").font(.caption).foregroundStyle(.secondary)
+                            }
                             Button("Apply") { viewModel.apply(preset) }
+                            Button("Edit…") { editing = preset }
+                            Button("Duplicate") { viewModel.duplicate(preset) }
                             Button(role: .destructive) { viewModel.remove(preset) } label: {
                                 Image(systemName: "trash")
                             }.accessibilityLabel("Delete preset")
@@ -60,8 +106,16 @@ struct PresetsTab: View {
                 }
             }
             if let error = viewModel.errorMessage { Text(error).foregroundStyle(.red) }
+            if !viewModel.failedSession.launchItems.isEmpty || !viewModel.failedSession.windows.isEmpty {
+                Button("Retry Failed Items") { Task { await viewModel.retryFailed() } }
+            }
         }
         .formStyle(.grouped)
+        .disabled(viewModel.isApplying || viewModel.isSaving)
+        .overlay(alignment: .bottom) {
+            if viewModel.isApplying || viewModel.isSaving { ProgressView("Preparing workspace…").padding().background(.regularMaterial, in: Capsule()) }
+        }
+        .sheet(item: $editing) { preset in SessionEditor(model: viewModel, draft: preset, close: { editing = nil }) }
         .onAppear { displays.refresh() }
     }
 }

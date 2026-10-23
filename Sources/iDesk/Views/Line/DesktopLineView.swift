@@ -47,12 +47,45 @@ struct DesktopLineView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            let width = geometry.size.width
+            Group {
+                if viewModel.look.layout == .grid {
+                    desktopGrid
+                } else if viewModel.look.layout == .scroll {
+                    ScrollView(.horizontal) {
+                        hangingLine(width: max(geometry.size.width, CGFloat(viewModel.items.count) * LineLayout.spacing + 60))
+                            .frame(width: max(geometry.size.width, CGFloat(viewModel.items.count) * LineLayout.spacing + 60), height: LineLayout.panelHeight - 12)
+                    }
+                    .scrollIndicators(.visible)
+                } else {
+                    hangingLine(width: geometry.size.width)
+                }
+            }
+            .offset(y: revealed ? 0 : -(LineLayout.panelHeight + 12))
+            .animation(revealed ? .spring(response: 0.42, dampingFraction: 0.82) : .easeIn(duration: 0.22), value: revealed)
+        }
+        .onAppear { isVisible = true }
+        .onDisappear { isVisible = false }
+        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
+            lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
+        }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.screensDidSleepNotification)) { _ in
+            screenAwake = false
+        }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.screensDidWakeNotification)) { _ in
+            screenAwake = true
+        }
+        .coordinateSpace(name: DesktopLineView.space)
+        .onPreferenceChange(LineHitRectsKey.self) { rects in
+            viewModel.hitRects = rects
+        }
+    }
+
+    private func hangingLine(width: CGFloat) -> some View {
             let count = viewModel.items.count
             let scale = LineLayout.scale(count: count, width: width)
             let xs = (0..<count).map { LineLayout.x(index: $0, count: count, width: width) }
 
-            TimelineView(.animation(minimumInterval: 1.0 / (lowPowerMode ? 15.0 : 30.0), paused: !animates)) { timeline in
+            return TimelineView(.animation(minimumInterval: 1.0 / (lowPowerMode ? 15.0 : 30.0), paused: !animates)) { timeline in
                 let time = timeline.date.timeIntervalSinceReferenceDate
                 ZStack(alignment: .topLeading) {
                     LineDecor(style: viewModel.look.style, sway: viewModel.look.sway, width: width, cardXs: xs,
@@ -86,28 +119,40 @@ struct DesktopLineView: View {
             }
             .animation(.spring(response: 0.55, dampingFraction: 0.78), value: viewModel.items.map(\.id))
             .animation(.easeInOut(duration: 0.35), value: viewModel.look.style)
-            // Tucked away, the whole line waits above the top edge and slides
-            // out from under the menu bar, the way an auto-hiding Dock does.
-            .offset(y: revealed ? 0 : -(LineLayout.panelHeight + 12))
-            .animation(
-                revealed ? .spring(response: 0.42, dampingFraction: 0.82) : .easeIn(duration: 0.22),
-                value: revealed
-            )
-        }
-        .onAppear { isVisible = true }
-        .onDisappear { isVisible = false }
-        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
-            lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
-        }
-        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.screensDidSleepNotification)) { _ in
-            screenAwake = false
-        }
-        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.screensDidWakeNotification)) { _ in
-            screenAwake = true
-        }
-        .coordinateSpace(name: DesktopLineView.space)
-        .onPreferenceChange(LineHitRectsKey.self) { rects in
-            viewModel.hitRects = rects
+    }
+
+    private var desktopGrid: some View {
+        ScrollView {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 155), spacing: 12)], spacing: 12) {
+                ForEach(viewModel.items) { item in
+                    VStack(spacing: 6) {
+                        if let image = item.thumbnail {
+                            Image(nsImage: image).resizable().scaledToFill().frame(height: 65).clipped()
+                        } else {
+                            Image(systemName: item.appearance.symbol).font(.title).frame(height: 65)
+                        }
+                        Text(item.name).font(.callout.weight(.medium)).lineLimit(1)
+                        WindowBadges(windows: item.windows)
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(item.space.isCurrent ? item.appearance.color.color : .clear, lineWidth: 2))
+                    .overlay(alignment: .topTrailing) {
+                        Image(systemName: "pencil").font(.caption).padding(8).allowsHitTesting(false)
+                    }
+                    .overlay {
+                        if isInteractive { CardClickArea(item: item, viewModel: viewModel) }
+                    }
+                    .background(GeometryReader { proxy in
+                        Color.clear.preference(key: LineHitRectsKey.self, value: [item.id: proxy.frame(in: .named(Self.space))])
+                    })
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(item.name)
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAction { viewModel.select(item.space) }
+                }
+            }.padding(14)
         }
     }
 
@@ -144,8 +189,8 @@ private struct HangingDesktopView: View {
             card
         }
         .rotationEffect(.degrees(angle), anchor: .top)
-        .offset(y: (arrived ? 0 : -50) + hop)
-        .opacity(arrived ? 1 : 0)
+        .offset(y: (arrived || !isInteractive ? 0 : -50) + hop)
+        .opacity(arrived || !isInteractive ? 1 : 0)
         .onAppear(perform: arrive)
         .onChange(of: viewModel.gust) { _, _ in breeze() }
         .onChange(of: viewModel.isRevealed) { _, now in if now { drop() } }
@@ -181,6 +226,7 @@ private struct HangingDesktopView: View {
         let photo = LineLayout.photoSize(aspect: item.thumbnail.map { $0.size.width / max($0.size.height, 1) } ?? item.aspect)
         return VStack(spacing: 0) {
             DesktopPhoto(item: item, size: photo, radius: chrome.photoRadius, tint: chrome.captionColor)
+            WindowBadges(windows: item.windows).frame(maxWidth: photo.width)
             caption
                 .frame(width: photo.width, height: LineLayout.captionHeight)
         }
@@ -270,6 +316,7 @@ private struct HangingDesktopView: View {
     // MARK: Motion
 
     private func arrive() {
+        guard isInteractive else { arrived = true; return }
         swing = 16
         withAnimation(.spring(response: 0.42, dampingFraction: 0.72).delay(Double(index) * 0.05)) { arrived = true }
         withAnimation(.interpolatingSpring(stiffness: 46, damping: 2.6).delay(Double(index) * 0.05)) { swing = 0 }
@@ -399,6 +446,9 @@ private struct CardClickArea: NSViewRepresentable {
         let id = item.id
         let viewModel = viewModel
         view.onClick = { viewModel.select(space) }
+        view.destinationID = space.id
+        view.onDropWindows = { viewModel.dropWindows($0, on: space) }
+        view.registerForDraggedTypes([WindowDragSession.type])
         view.onShiftClick = { viewModel.moveWindow(to: space) }
         view.toolTip = String(localized: "Click to switch desktops. Shift-click to move the focused window here and follow it.")
         view.onRename = { viewModel.rename(space) }
@@ -411,6 +461,7 @@ private struct CardClickArea: NSViewRepresentable {
             if let move = viewModel.windowMoveAction(to: space) {
                 menu.addItem(LineMenuItem(String(localized: "Move Window Here and Follow"), handler: move))
             }
+            menu.addItem(LineMenuItem(String(localized: "Show Windows")) { viewModel.showWindows(on: space) })
             menu.addItem(LineMenuItem(String(localized: "Rename…")) { viewModel.rename(space) })
             menu.addItem(LineMenuItem(String(localized: "Use Default Name")) { viewModel.resetName(space) })
             menu.addItem(.separator())
@@ -433,6 +484,26 @@ final class CardClickView: NSView {
     var onRename: () -> Void = {}
     var onPressChange: (Bool) -> Void = { _ in }
     var menuProvider: () -> NSMenu = { NSMenu() }
+
+    var destinationID = ""
+    var onDropWindows: ([WindowSelection]) -> Void = { _ in }
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation { draggingUpdated(sender) }
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        let valid = WindowDragSession.shared.accepts(sender.draggingPasteboard, destination: destinationID)
+        wantsLayer = true
+        layer?.cornerRadius = 8
+        layer?.borderWidth = valid ? 3 : 0
+        layer?.borderColor = NSColor.controlAccentColor.cgColor
+        return valid ? .move : []
+    }
+    override func draggingExited(_ sender: NSDraggingInfo?) { layer?.borderWidth = 0 }
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        layer?.borderWidth = 0
+        guard let windows = WindowDragSession.shared.take(sender.draggingPasteboard, destination: destinationID) else { return false }
+        onDropWindows(windows)
+        return true
+    }
+    override func draggingEnded(_ sender: NSDraggingInfo) { layer?.borderWidth = 0 }
 
     private var isPressing = false
     private static let cornerSize: CGFloat = 28
@@ -487,4 +558,24 @@ final class LineMenuItem: NSMenuItem {
     required init(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     @objc private func fire() { handler() }
+}
+
+private struct WindowBadges: View {
+    let windows: [WindowCandidate]
+    private var apps: [WindowCandidate] {
+        var pids = Set<pid_t>()
+        return windows.filter { pids.insert($0.selection.processID).inserted }
+    }
+    var body: some View {
+        if !windows.isEmpty {
+            HStack(spacing: 3) {
+                ForEach(Array(apps.prefix(4))) { window in
+                    if let icon = window.icon { Image(nsImage: icon).resizable().frame(width: 13, height: 13) }
+                }
+                Spacer(minLength: 0)
+                Text("\(windows.count)").font(.system(size: 9, weight: .semibold))
+                Image(systemName: "macwindow").font(.system(size: 9))
+            }.padding(.horizontal, 3).padding(.vertical, 2)
+        }
+    }
 }

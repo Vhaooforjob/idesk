@@ -7,8 +7,17 @@ final class SettingsStore: ObservableObject {
         didSet { scheduleSave() }
     }
 
+    @Published private(set) var saveError: String?
     private let fileURL: URL
     private var saveTask: Task<Void, Never>?
+
+    /// App Intents queries must not move a corrupt file or initialize controllers.
+    static func readForQueries() -> AppSettings {
+        guard let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
+              let data = try? Data(contentsOf: base.appendingPathComponent("iDesk/settings.json")),
+              let settings = try? JSONDecoder().decode(AppSettings.self, from: data) else { return AppSettings() }
+        return settings
+    }
 
     convenience init(fileManager: FileManager = .default) {
         let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -44,11 +53,26 @@ final class SettingsStore: ObservableObject {
     }
 
     func saveNow() throws {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        let data = try encoder.encode(value)
-        try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try data.write(to: fileURL, options: .atomic)
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            let data = try encoder.encode(value)
+            try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try data.write(to: fileURL, options: .atomic)
+            saveError = nil
+        } catch {
+            saveError = error.localizedDescription
+            throw error
+        }
+    }
+
+    func retrySave() { try? saveNow() }
+
+    func replace(with settings: AppSettings) throws {
+        let previous = value
+        value = settings
+        do { try saveNow() }
+        catch { value = previous; throw error }
     }
 
     private func scheduleSave() {

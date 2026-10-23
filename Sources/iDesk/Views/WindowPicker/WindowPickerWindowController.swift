@@ -21,14 +21,17 @@ final class WindowPickerWindowController {
         if panel?.isVisible == true { dismiss(); return }
         if panel == nil {
             let panel = WindowPickerPanel(
-                contentRect: NSRect(x: 0, y: 0, width: 720, height: 480),
+                contentRect: NSRect(x: 0, y: 0, width: 780, height: 590),
                 styleMask: [.titled, .closable, .nonactivatingPanel], backing: .buffered, defer: false)
-            panel.title = String(localized: "Move a Window")
+            panel.title = String(localized: "Find and Move Windows")
             panel.isReleasedWhenClosed = false
             panel.level = .floating
             panel.hidesOnDeactivate = false
             panel.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
             panel.onClose = { [weak self] in self?.loadTask?.cancel() }
+            self.panel = panel
+        }
+        if let panel {
             panel.contentView = NSHostingView(rootView: WindowPickerView(viewModel: viewModel,
                 settingsStore: settingsStore,
                 submit: { [weak self] in self?.submit() }, cancel: { [weak self] in self?.dismiss() },
@@ -36,8 +39,19 @@ final class WindowPickerWindowController {
                     self?.dismiss()
                     PermissionService.requestSwitchDesktops()
                     PermissionService.openAccessibilitySettings()
+                }, activate: { [weak self] in self?.activate() },
+                undo: { [weak self] in
+                    guard let self else { return }
+                    self.dismiss()
+                    Task { await self.desktops.undoLastMove() }
+                }, canUndo: desktops.canUndoMove, arrange: { [weak self] layout in
+                    guard let self else { return }
+                    let windows = self.viewModel.selectedWindows.map(\.selection)
+                    Task { await self.desktops.arrange(windows, using: layout); self.reload() }
+                }, undoArrangement: { [weak self] in
+                    guard let self else { return }
+                    Task { await self.desktops.undoArrangement(); self.reload() }
                 }))
-            self.panel = panel
         }
         if let screen = SpaceService.screenUnderPointer, let panel {
             let area = screen.visibleFrame
@@ -46,6 +60,18 @@ final class WindowPickerWindowController {
         reload()
         // This panel accepts typing without replacing the frontmost application.
         panel?.makeKeyAndOrderFront(nil)
+    }
+
+    func show(desktopID: String) {
+        if panel?.isVisible == true { dismiss() }
+        toggle()
+        loadTask?.cancel()
+        loadTask = Task { [weak self] in
+            guard let self else { return }
+            await self.viewModel.load()
+            self.viewModel.desktopFilter = self.desktops.spaces.first { $0.id == desktopID }?.managedID
+            self.isLoading = false
+        }
     }
 
     private func reload() {
@@ -65,11 +91,17 @@ final class WindowPickerWindowController {
         panel?.orderOut(nil)
     }
 
+    private func activate() {
+        guard !isLoading, let selection = viewModel.selectedWindow?.selection else { return }
+        dismiss()
+        Task { await desktops.activateWindow(selection) }
+    }
+
     private func submit() {
-        guard panel?.isVisible == true, !isLoading, let request = viewModel.moveRequest else { return }
+        guard panel?.isVisible == true, !isLoading, let request = viewModel.batchRequest else { return }
         dismiss()
         let follow = settingsStore.value.followMovedWindow
-        Task { await desktops.moveWindow(.success(request.window), to: request.destination, follow: follow) }
+        Task { await desktops.moveWindows(request.windows, to: request.destination, follow: follow) }
     }
 }
 

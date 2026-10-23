@@ -8,6 +8,7 @@ struct HangingDesktop: Identifiable, Equatable {
     var appearance = DesktopAppearance()
     /// Width over height of the display, for pictures not taken yet.
     var aspect: CGFloat = 16 / 10
+    var windows: [WindowCandidate] = []
 
     var id: String { space.id }
 
@@ -26,12 +27,13 @@ struct HangingDesktop: Identifiable, Equatable {
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.space == rhs.space && lhs.name == rhs.name && lhs.thumbnail === rhs.thumbnail && lhs.aspect == rhs.aspect && lhs.appearance == rhs.appearance
+        lhs.space == rhs.space && lhs.name == rhs.name && lhs.thumbnail === rhs.thumbnail && lhs.aspect == rhs.aspect && lhs.appearance == rhs.appearance && lhs.windows.map(\.id) == rhs.windows.map(\.id) && lhs.windows.map(\.title) == rhs.windows.map(\.title)
     }
 }
 
 /// How the line looks and moves, taken from the settings.
 struct LineLook: Equatable {
+    var layout: DesktopLineLayout = .scroll
     var style: HangStyle = .clothesline
     var sway: SwayStyle = .gentle
     var effect: SwitchEffect = .swing
@@ -40,6 +42,7 @@ struct LineLook: Equatable {
     init() {}
 
     init(_ settings: AppSettings) {
+        layout = settings.lineLayout
         style = settings.hangStyle
         sway = settings.sway
         effect = settings.switchEffect
