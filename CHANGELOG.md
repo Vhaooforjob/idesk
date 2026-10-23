@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.3.2 — 2026-10-23
+
+- Follow changes made with the screen's own buttons: while the menu or the Settings window is open, brightness, color mode and Night Shift are read again every 3 seconds, and the sliders and ticks update in place. Nothing is read while they are closed.
+- Show and change the screen's own color mode (sRGB, 6500 K, 7500 K, 9300 K, User 1 and so on) in **Settings → Screens** and under **Brightness and Color → Color Mode**, for screens that list it through DDC/CI.
+- Follow Night Shift as soon as it changes, from Control Center, its schedule or a shortcut.
+- Report a color mode the screen refuses, and show the mode it is really in.
+
 ## v1.3.1 — 2026-10-23
 
 - Add brightness and warmth sliders for each external screen in **Settings → Screens** and under **Brightness and Color** in the menu bar. Brightness changes the screen's own backlight over DDC/CI when the screen answers (Apple Silicon), and otherwise darkens the picture with a gamma table. Warmth always uses a gamma table, so it works on every screen. Both are remembered per screen.

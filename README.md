@@ -12,6 +12,14 @@
 
 iDesk is a menu bar app written in Swift with SwiftUI, AppKit, and ScreenCaptureKit, built from the same Capture Line that iSnap uses for screenshots.
 
+## What's new in v1.3.2
+
+See [release notes](docs/releases/v1.3.2.md) and [download v1.3.2](https://github.com/Vhaooforjob/idesk/releases/tag/v1.3.2).
+
+- **Live values:** the brightness slider, color mode and Night Shift follow changes made with the screen's own buttons while the menu or Settings is open.
+- **Color mode:** screens that list color presets through DDC/CI (sRGB, 6500 K, 7500 K, User 1…) show and change them in **Settings → Screens** and the menu's **Color Mode**.
+- **Night Shift:** the switch updates as soon as macOS changes it.
+
 ## What's new in v1.3.1
 
 See [release notes](docs/releases/v1.3.1.md) and [download v1.3.1](https://github.com/Vhaooforjob/idesk/releases/tag/v1.3.1).
@@ -120,7 +128,7 @@ To reduce background power use, pointer tracking reacts to mouse events, and win
 
 ### Brightness and color of external screens
 
-**Settings → Screens** and the menu bar's **Brightness and Color** submenu give each external screen a **Brightness** and a **Warmth** slider, and one **Night Shift** switch. Brightness is the screen's own backlight when it answers DDC/CI; a screen, cable or dock that does not pass DDC through gets a software dimmer instead (it never goes below 10%, so a slider cannot leave the screen black, and the screen's own brightness should stay high). Warmth lowers blue and a little green with a gamma table and lasts while iDesk runs; quitting iDesk gives the colors back. Night Shift is one macOS setting for every screen, and some external screens do not show it, so use Warmth to tint a single screen. `⌃⌥↑` / `⌃⌥↓` change the brightness of the external screen under the pointer and `⌃⌥N` flips Night Shift; record other combinations in **Settings → General → Shortcuts**.
+**Settings → Screens** and the menu bar's **Brightness and Color** submenu give each external screen a **Brightness** and a **Warmth** slider, and one **Night Shift** switch. Brightness is the screen's own backlight when it answers DDC/CI; a screen, cable or dock that does not pass DDC through gets a software dimmer instead (it never goes below 10%, so a slider cannot leave the screen black, and the screen's own brightness should stay high). Screens that list color presets through DDC/CI also get a **Color mode** choice (sRGB, 6500 K, User 1 and so on): the screen's own setting, read and changed over DDC/CI. While the menu or Settings is open, iDesk reads the screen again every three seconds, so the sliders follow the screen's own buttons. Warmth lowers blue and a little green with a gamma table and lasts while iDesk runs; quitting iDesk gives the colors back. Night Shift is one macOS setting for every screen, and some external screens do not show it, so use Warmth to tint a single screen. `⌃⌥↑` / `⌃⌥↓` change the brightness of the external screen under the pointer and `⌃⌥N` flips Night Shift; record other combinations in **Settings → General → Shortcuts**.
 
 ## How it works, and its limits
 

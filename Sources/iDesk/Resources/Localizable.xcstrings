@@ -3731,16 +3731,6 @@
         }
       }
     },
-    "Brightness changes the screen's own backlight. Warmth tints the picture and lasts while iDesk runs.": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Độ sáng chỉnh đèn nền thật của màn hình. Độ ấm màu chỉ phủ màu lên hình và có tác dụng khi iDesk đang chạy."
-          }
-        }
-      }
-    },
     "This screen does not accept brightness commands (some cables and docks do not pass them), so iDesk darkens the picture instead. Keep the screen's own brightness high. Warmth tints the picture and lasts while iDesk runs.": {
       "localizations": {
         "vi": {
@@ -3807,6 +3797,116 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bật hoặc tắt Night Shift"
+          }
+        }
+      }
+    },
+    "Brightness and Color mode change the screen itself. Warmth tints the picture and lasts while iDesk runs.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Độ sáng và Chế độ màu thay đổi chính màn hình. Độ ấm màu chỉ phủ màu lên hình và có tác dụng khi iDesk đang chạy."
+          }
+        }
+      }
+    },
+    "Color mode": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chế độ màu"
+          }
+        }
+      }
+    },
+    "Color Mode": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chế độ màu"
+          }
+        }
+      }
+    },
+    "sRGB": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sRGB"
+          }
+        }
+      }
+    },
+    "Native": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gốc"
+          }
+        }
+      }
+    },
+    "User 1": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người dùng 1"
+          }
+        }
+      }
+    },
+    "User 2": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người dùng 2"
+          }
+        }
+      }
+    },
+    "User 3": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người dùng 3"
+          }
+        }
+      }
+    },
+    "Mode %lld": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chế độ %lld"
+          }
+        }
+      }
+    },
+    "Could not change the screen's color mode": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không đổi được chế độ màu của màn hình"
+          }
+        }
+      }
+    },
+    "The screen did not accept the change.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Màn hình không nhận thay đổi này."
           }
         }
       }

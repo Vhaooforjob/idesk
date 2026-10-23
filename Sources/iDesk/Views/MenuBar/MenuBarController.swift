@@ -11,6 +11,11 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     private let openDesktopSearch: () -> Void
     private let statusItem: NSStatusItem
     private var cancellables: Set<AnyCancellable> = []
+    /// The rows of the open Brightness and Color menu, so they can follow
+    /// changes while the menu is open.
+    private var sliders: [CGDirectDisplayID: MenuSliderView] = [:]
+    private var presetItems: [CGDirectDisplayID: [Int: NSMenuItem]] = [:]
+    private weak var nightShiftItem: NSMenuItem?
 
     init(viewModel: MenuBarViewModel, openSettings: @escaping () -> Void, openWindowPicker: @escaping () -> Void, openDesktopSearch: @escaping () -> Void) {
         self.openDesktopSearch = openDesktopSearch
@@ -28,6 +33,12 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             guard let button = self?.statusItem.button else { return }
             Self.configureIcon(of: button, symbol: appearance.symbol)
         }.store(in: &cancellables)
+        viewModel.tuning?.$screens
+            .sink { [weak self] screens in self?.follow(screens) }
+            .store(in: &cancellables)
+        viewModel.tuning?.$nightShift
+            .sink { [weak self] status in self?.nightShiftItem?.state = status?.isOn == true ? .on : .off }
+            .store(in: &cancellables)
         viewModel.$title
             .combineLatest(viewModel.$currentName)
             .sink { [weak self] title, name in self?.show(title, name: name) }
@@ -58,6 +69,21 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     private func show(_ title: String, name: String) {
         guard let button = statusItem.button else { return }
         Self.configureTitle(of: button, title: title, name: name)
+    }
+
+    func menuWillOpen(_ menu: NSMenu) {
+        viewModel.menuVisibilityChanged(isOpen: true)
+    }
+
+    func menuDidClose(_ menu: NSMenu) {
+        viewModel.menuVisibilityChanged(isOpen: false)
+    }
+
+    private func follow(_ screens: [ScreenTuningViewModel.Screen]) {
+        for screen in screens {
+            sliders[screen.id]?.show(screen.brightness)
+            for (value, item) in presetItems[screen.id] ?? [:] { item.state = value == screen.colorPreset ? .on : .off }
+        }
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
@@ -198,22 +224,27 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     private func tuningMenu(_ tuning: ScreenTuningViewModel) -> NSMenuItem {
         let menu = NSMenu()
         menu.autoenablesItems = false
+        sliders = [:]
+        presetItems = [:]
         for (index, screen) in tuning.screens.enumerated() {
             if index > 0 { menu.addItem(.separator()) }
             let header = NSMenuItem(title: screen.name, action: nil, keyEquivalent: "")
             header.isEnabled = false
             menu.addItem(header)
             let brightness = NSMenuItem()
-            brightness.view = MenuSliderView(
+            let brightnessView = MenuSliderView(
                 title: String(localized: "Brightness"), low: "sun.min", high: "sun.max", value: screen.brightness,
                 range: screen.brightnessRange
             ) { [weak tuning] in tuning?.setBrightness($0, for: screen.id) }
+            brightness.view = brightnessView
+            sliders[screen.id] = brightnessView
             menu.addItem(brightness)
             let warmth = NSMenuItem()
             warmth.view = MenuSliderView(
                 title: String(localized: "Warmth"), low: "snowflake", high: "flame", value: screen.warmth, range: 0...1
             ) { [weak tuning] in tuning?.setWarmth($0, for: screen.id) }
             menu.addItem(warmth)
+            if !screen.colorPresets.isEmpty { menu.addItem(colorModeMenu(for: screen, tuning: tuning)) }
         }
         if tuning.hasNightShift {
             if !tuning.screens.isEmpty { menu.addItem(.separator()) }
@@ -222,10 +253,26 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             }
             night.state = tuning.nightShift?.isOn == true ? .on : .off
             night.showShortcut(viewModel.nightShiftShortcut)
+            nightShiftItem = night
             night.image = NSImage(systemSymbolName: "moon.fill", accessibilityDescription: nil)
             menu.addItem(night)
         }
         return groupItem(String(localized: "Brightness and Color"), menu: menu)
+    }
+
+    /// The color modes a screen offers, with its current one ticked.
+    private func colorModeMenu(for screen: ScreenTuningViewModel.Screen, tuning: ScreenTuningViewModel) -> NSMenuItem {
+        let modes = NSMenu()
+        modes.autoenablesItems = false
+        var items: [Int: NSMenuItem] = [:]
+        for preset in screen.colorPresets {
+            let item = LineMenuItem(preset.name) { [weak tuning] in tuning?.setColorPreset(preset.value, for: screen.id) }
+            item.state = preset.value == screen.colorPreset ? .on : .off
+            items[preset.value] = item
+            modes.addItem(item)
+        }
+        presetItems[screen.id] = items
+        return groupItem(String(localized: "Color Mode"), menu: modes)
     }
 
     /// A submenu of mutually exclusive options with the current one ticked.
@@ -293,6 +340,12 @@ final class MenuSliderView: NSView {
     }
 
     @objc private func changed() { onChange(slider.doubleValue) }
+
+    /// Moves the slider to what the screen now says, unless a drag is under way.
+    func show(_ value: Double) {
+        guard NSEvent.pressedMouseButtons & 1 == 0, abs(slider.doubleValue - value) > 0.001 else { return }
+        slider.doubleValue = value
+    }
 }
 
 extension NSMenuItem {

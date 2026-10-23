@@ -19,6 +19,10 @@ final class ScreenTuningViewModel: ObservableObject {
         /// 0...1: the backlight, or the software level.
         var brightness: Double
         var warmth: Double
+        /// The color modes the screen offers, and the one it is in. Empty
+        /// when the screen does not offer any.
+        var colorPresets: [ColorPreset] = []
+        var colorPreset: Int?
 
         var usesHardware: Bool {
             if case .hardware = control { return true }
@@ -37,6 +41,15 @@ final class ScreenTuningViewModel: ObservableObject {
     @Published private(set) var screens: [Screen] = []
     @Published private(set) var nightShift: NightShiftStatus?
 
+    /// Why the screens are being read again and again.
+    enum WatchReason: Hashable {
+        case menu, settings
+    }
+
+    /// How often an open menu or Settings window reads the screens again,
+    /// to follow changes made with the screen's own buttons.
+    static let watchInterval = 3.0
+
     private let displays: DisplaysViewModel
     private let settingsStore: SettingsStore
     private let system: ScreenTuningSystem
@@ -48,6 +61,11 @@ final class ScreenTuningViewModel: ObservableObject {
     private var tinted: Set<CGDirectDisplayID> = []
     private var pendingWrites: [CGDirectDisplayID: Int] = [:]
     private var writers: [CGDirectDisplayID: Task<Void, Never>] = [:]
+    private var featureWrites: [Task<Void, Never>] = []
+    /// What each screen says it can do, kept per screen: asking takes seconds.
+    private var capabilities: [String: [UInt8: [UInt8]]] = [:]
+    private var watchReasons: Set<WatchReason> = []
+    private var watcher: Task<Void, Never>?
 
     init(displays: DisplaysViewModel, settingsStore: SettingsStore, system: ScreenTuningSystem, dialogs: DialogPresenting) {
         self.displays = displays
@@ -55,6 +73,9 @@ final class ScreenTuningViewModel: ObservableObject {
         self.system = system
         self.dialogs = dialogs
         nightShift = system.nightShiftStatus()
+        system.onNightShiftChange = { [weak self] in
+            MainActor.assumeIsolated { self?.refreshNightShift() }
+        }
     }
 
     deinit {
@@ -78,6 +99,7 @@ final class ScreenTuningViewModel: ObservableObject {
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor in
                     try? await Task.sleep(for: .seconds(2))
+                    self?.capabilities = [:]
                     await self?.reload()
                 }
             })
@@ -123,6 +145,67 @@ final class ScreenTuningViewModel: ObservableObject {
         // Screens that went away have nothing left to restore.
         tinted.formIntersection(result.map(\.id))
         refreshNightShift()
+        await loadColorPresets(generation: current)
+    }
+
+    /// Reads the screens again without touching their colors, to show what
+    /// the screen itself now says: its buttons may have changed it.
+    func refresh() async {
+        guard externals.map(\.id) == screens.map(\.id) else { await reload(); return }
+        for id in screens.map(\.id) {
+            guard let screen = screens.first(where: { $0.id == id }), screen.usesHardware,
+                  writers[id] == nil, pendingWrites[id] == nil else { continue }
+            guard case let .hardware(maximum) = screen.control, let level = await system.hardwareBrightness(of: id),
+                  writers[id] == nil, let index = screens.firstIndex(where: { $0.id == id }) else { continue }
+            let fraction = Double(level.value) / Double(max(level.maximum, maximum, 1))
+            if screens[index].brightness != fraction { screens[index].brightness = fraction }
+            guard !screens[index].colorPresets.isEmpty, featureWrites.isEmpty,
+                  let preset = await system.hardwareFeature(DDCBus.colorPresetCode, of: id),
+                  featureWrites.isEmpty, let again = screens.firstIndex(where: { $0.id == id }) else { continue }
+            if screens[again].colorPreset != preset.value { screens[again].colorPreset = preset.value }
+        }
+        refreshNightShift()
+    }
+
+    /// Reads the color modes of every screen that answers DDC/CI.
+    private func loadColorPresets(generation current: Int) async {
+        for screen in screens where screen.usesHardware {
+            let key = screen.uuid ?? String(screen.id)
+            let features: [UInt8: [UInt8]]
+            if let known = capabilities[key] {
+                features = known
+            } else {
+                let fetched = await system.hardwareCapabilities(of: screen.id) ?? [:]
+                guard current == generation else { return }
+                capabilities[key] = fetched
+                features = fetched
+            }
+            guard let allowed = features[DDCBus.colorPresetCode], !allowed.isEmpty,
+                  let level = await system.hardwareFeature(DDCBus.colorPresetCode, of: screen.id) else { continue }
+            guard current == generation, let index = screens.firstIndex(where: { $0.id == screen.id }) else { return }
+            // The screen's own mode is always offered, even if it left it out.
+            let values = Set(allowed.map(Int.init)).union([level.value]).sorted()
+            screens[index].colorPresets = values.map { ColorPreset(value: $0) }
+            screens[index].colorPreset = level.value
+        }
+    }
+
+    // MARK: Watching
+
+    /// Keeps reading the screens while something that shows them is open.
+    func setWatching(_ reason: WatchReason, _ on: Bool) {
+        if on { watchReasons.insert(reason) } else { watchReasons.remove(reason) }
+        if watchReasons.isEmpty {
+            watcher?.cancel()
+            watcher = nil
+        } else if watcher == nil {
+            watcher = Task { [weak self] in
+                while !Task.isCancelled {
+                    await self?.refresh()
+                    try? await Task.sleep(for: .seconds(Self.watchInterval))
+                }
+            }
+        }
     }
 
     func refreshNightShift() {
@@ -178,6 +261,21 @@ final class ScreenTuningViewModel: ObservableObject {
         applyColors(of: screens[index])
     }
 
+    /// Puts the screen in one of its own color modes.
+    func setColorPreset(_ value: Int, for id: CGDirectDisplayID) {
+        guard let index = screens.firstIndex(where: { $0.id == id }), screens[index].colorPreset != value else { return }
+        screens[index].colorPreset = value
+        featureWrites.append(Task { [weak self] in
+            guard let self else { return }
+            let written = await self.system.setHardwareFeature(DDCBus.colorPresetCode, to: value, of: id)
+            self.featureWrites.removeAll()
+            guard !written else { return }
+            self.dialogs.showError(String(localized: "Could not change the screen's color mode"),
+                                   WorkspaceFeatureError(message: String(localized: "The screen did not accept the change.")))
+            await self.refresh()
+        })
+    }
+
     func setNightShift(_ on: Bool) {
         let accepted = system.setNightShift(on)
         refreshNightShift()
@@ -188,7 +286,7 @@ final class ScreenTuningViewModel: ObservableObject {
 
     /// Waits for the hardware writes in flight. Tests use it.
     func settle() async {
-        for task in Array(writers.values) { await task.value }
+        for task in Array(writers.values) + featureWrites { await task.value }
     }
 
     // MARK: Writing

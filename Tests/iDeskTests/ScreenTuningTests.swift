@@ -94,6 +94,44 @@ final class DDCBusTests: XCTestCase {
         XCTAssertNil(DDCBus.level(from: refused), "the screen refused the feature")
     }
 
+    func testReadsTheFeaturesAScreenListsInItsCapabilities() {
+        let text = "(vcp(02 04 05 08 10 12 14(01 05 06 08 0B) 16 18 1A 60(01 03)6C 6E 70 C8 B0 B6 DF)prot(monitor)type(LCD)cmds(01 02 03 07 0C F3)mccs_ver(2.1)model(P24FBA-RAGL))"
+        let features = DDCBus.features(in: text)
+        XCTAssertEqual(features[0x14], [0x01, 0x05, 0x06, 0x08, 0x0B])
+        XCTAssertEqual(features[0x60], [0x01, 0x03])
+        XCTAssertEqual(features[0x10], [])
+        XCTAssertNotNil(features[0x6C], "a feature straight after a closing parenthesis")
+        XCTAssertNil(features[0xDC])
+        XCTAssertNil(features[0x01], "cmds(...) is not a feature list")
+        XCTAssertEqual(DDCBus.features(in: "no features"), [:])
+    }
+
+    func testAScreenThatLacksAFeatureIsToldApart() {
+        var reply: [UInt8] = [0x6E, 0x88, 0x02, 0x01, 0xDC, 0, 0, 0, 0, 0, 0]
+        reply[10] = DDCBus.checksum(of: Array(reply[0..<10]), seed: 0x50)
+        XCTAssertEqual(DDCBus.parse(reply, code: 0xDC), .unsupported)
+        XCTAssertEqual(DDCBus.parse(reply, code: 0x10), .invalid, "the reply is for another feature")
+    }
+
+    func testReadsAPieceOfTheCapabilitiesText() {
+        let text = Array("(vcp(10 14))".utf8)
+        var reply: [UInt8] = [0x6E, UInt8(0x80 | (text.count + 3)), 0xE3, 0, 0] + text
+        reply.append(DDCBus.checksum(of: reply, seed: 0x50))
+        XCTAssertEqual(DDCBus.capabilitiesPiece(from: reply), text)
+        reply[reply.count - 1] ^= 0xFF
+        XCTAssertNil(DDCBus.capabilitiesPiece(from: reply))
+        var last: [UInt8] = [0x6E, 0x83, 0xE3, 0, 0x0C]
+        last.append(DDCBus.checksum(of: last, seed: 0x50))
+        XCTAssertEqual(DDCBus.capabilitiesPiece(from: last), [], "an empty piece ends the text")
+    }
+
+    func testColorPresetNames() {
+        XCTAssertEqual(ColorPreset(value: 0x05).name, "6500 K")
+        XCTAssertEqual(ColorPreset(value: 0x06).name, "7500 K")
+        XCTAssertEqual(ColorPreset(value: 0x01).name, "sRGB")
+        XCTAssertFalse(ColorPreset(value: 0x63).name.isEmpty)
+    }
+
     func testMatchesScreensToChannelsByVendorAndModel() {
         let channels: [(vendor: UInt16, model: UInt16)] = [(1, 10), (2, 20)]
         let matches = DDCBus.match(screens: [.init(id: 7, vendor: 2, model: 20), .init(id: 9, vendor: 1, model: 10)], channels: channels)
@@ -123,6 +161,12 @@ final class FakeTuningSystem: ScreenTuningSystem {
     var restored = 0
     var night: NightShiftStatus? = NightShiftStatus(isOn: false)
     var acceptsNightShift = true
+    var onNightShiftChange: (() -> Void)?
+    var features: [CGDirectDisplayID: [UInt8: DDCBus.Level]] = [:]
+    var capabilities: [CGDirectDisplayID: [UInt8: [UInt8]]] = [:]
+    var capabilityRequests = 0
+    var featureWrites: [(code: UInt8, value: Int, id: CGDirectDisplayID)] = []
+    var featureWriteSucceeds = true
 
     func identifier(for id: CGDirectDisplayID) -> String? { "UUID-\(id)" }
     func prepareHardware(for ids: [CGDirectDisplayID]) {}
@@ -134,6 +178,21 @@ final class FakeTuningSystem: ScreenTuningSystem {
         written.append((value, id))
         levels[id] = DDCBus.Level(value: value, maximum: levels[id]?.maximum ?? 100)
         return true
+    }
+
+    func hardwareFeature(_ code: UInt8, of id: CGDirectDisplayID) async -> DDCBus.Level? { features[id]?[code] }
+
+    func setHardwareFeature(_ code: UInt8, to value: Int, of id: CGDirectDisplayID) async -> Bool {
+        await Task.yield()
+        guard featureWriteSucceeds else { return false }
+        featureWrites.append((code, value, id))
+        features[id, default: [:]][code] = DDCBus.Level(value: value, maximum: features[id]?[code]?.maximum ?? 255)
+        return true
+    }
+
+    func hardwareCapabilities(of id: CGDirectDisplayID) async -> [UInt8: [UInt8]]? {
+        capabilityRequests += 1
+        return capabilities[id]
     }
 
     func applyGain(_ gain: ScreenColor.Gain, to id: CGDirectDisplayID) { gains.append((gain, id)) }
@@ -350,6 +409,126 @@ final class ScreenTuningViewModelTests: XCTestCase {
         XCTAssertEqual(shortcuts[.brightnessUp], "⌃⌥↑")
         XCTAssertNotNil(HotkeyService.parse(shortcuts[.brightnessDown] ?? ""))
         XCTAssertTrue(HotkeyService.validationErrors(shortcuts).isEmpty)
+    }
+
+    /// A screen with the color modes of the monitor this was written for.
+    private func giveColorModes(to id: CGDirectDisplayID, current: Int = 6) {
+        system.levels[id] = DDCBus.Level(value: 90, maximum: 100)
+        system.capabilities[id] = [0x10: [], 0x14: [0x01, 0x05, 0x06, 0x08, 0x0B]]
+        system.features[id] = [0x14: DDCBus.Level(value: current, maximum: 13)]
+    }
+
+    func testAScreenOffersTheColorModesItListsAndShowsItsCurrentOne() async {
+        giveColorModes(to: 3)
+        model = make([builtIn, monitor])
+        await model.reload()
+        XCTAssertEqual(model.screens.first?.colorPresets.map(\.value), [1, 5, 6, 8, 11])
+        XCTAssertEqual(model.screens.first?.colorPreset, 6)
+    }
+
+    func testTheCurrentModeIsOfferedEvenIfTheScreenLeftItOut() async {
+        giveColorModes(to: 3, current: 3)
+        model = make([monitor])
+        await model.reload()
+        XCTAssertEqual(model.screens.first?.colorPresets.map(\.value), [1, 3, 5, 6, 8, 11])
+    }
+
+    func testNoColorModesWhenTheScreenDoesNotListThem() async {
+        system.levels[3] = DDCBus.Level(value: 90, maximum: 100)
+        system.capabilities[3] = [0x10: []]
+        model = make([monitor])
+        await model.reload()
+        XCTAssertEqual(model.screens.first?.colorPresets, [])
+        XCTAssertNil(model.screens.first?.colorPreset)
+    }
+
+    func testCapabilitiesAreAskedOnlyOncePerScreen() async {
+        giveColorModes(to: 3)
+        model = make([monitor])
+        await model.reload()
+        await model.reload()
+        XCTAssertEqual(system.capabilityRequests, 1, "asking takes seconds")
+    }
+
+    func testChoosingAColorModeWritesItToTheScreen() async {
+        giveColorModes(to: 3)
+        model = make([monitor])
+        await model.reload()
+        model.setColorPreset(5, for: 3)
+        XCTAssertEqual(model.screens.first?.colorPreset, 5)
+        await model.settle()
+        XCTAssertEqual(system.featureWrites.map(\.value), [5])
+        XCTAssertEqual(system.featureWrites.first?.code, 0x14)
+    }
+
+    func testAColorModeTheScreenRefusesIsReportedAndPutBack() async {
+        giveColorModes(to: 3)
+        model = make([monitor])
+        await model.reload()
+        system.featureWriteSucceeds = false
+        model.setColorPreset(5, for: 3)
+        await model.settle()
+        XCTAssertEqual(dialogs.errors.count, 1)
+        XCTAssertEqual(model.screens.first?.colorPreset, 6, "shows what the screen is really in")
+    }
+
+    func testRefreshFollowsChangesMadeWithTheScreensOwnButtons() async {
+        giveColorModes(to: 3)
+        model = make([monitor])
+        await model.reload()
+        system.levels[3] = DDCBus.Level(value: 30, maximum: 100)
+        system.features[3]?[0x14] = DDCBus.Level(value: 8, maximum: 13)
+        system.night = NightShiftStatus(isOn: true)
+        await model.refresh()
+        XCTAssertEqual(model.screens.first?.brightness ?? 0, 0.3, accuracy: 0.0001)
+        XCTAssertEqual(model.screens.first?.colorPreset, 8)
+        XCTAssertEqual(model.nightShift, NightShiftStatus(isOn: true))
+        XCTAssertTrue(system.gains.isEmpty, "reading does not touch the colors")
+    }
+
+    func testRefreshSeesAScreenThatWasPluggedIn() async {
+        model = make([builtIn])
+        await model.reload()
+        XCTAssertTrue(model.screens.isEmpty)
+        let service = FakeDisplayService([builtIn, monitor])
+        let screens = DisplaysViewModel(service: service, dialogs: dialogs)
+        model = ScreenTuningViewModel(displays: screens, settingsStore: store, system: system, dialogs: dialogs)
+        await model.refresh()
+        XCTAssertEqual(model.screens.map(\.id), [3])
+    }
+
+    func testRefreshDoesNotOverwriteALevelBeingWritten() async {
+        system.levels[3] = DDCBus.Level(value: 90, maximum: 100)
+        model = make([monitor])
+        await model.reload()
+        model.setBrightness(0.2, for: 3)
+        await model.refresh()
+        XCTAssertEqual(model.screens.first?.brightness ?? 0, 0.2, accuracy: 0.0001)
+        await model.settle()
+    }
+
+    func testWatchingReadsTheScreensAgainUntilStopped() async throws {
+        system.levels[3] = DDCBus.Level(value: 90, maximum: 100)
+        model = make([monitor])
+        await model.reload()
+        system.levels[3] = DDCBus.Level(value: 40, maximum: 100)
+        model.setWatching(.menu, true)
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(model.screens.first?.brightness ?? 0, 0.4, accuracy: 0.0001)
+        model.setWatching(.settings, true)
+        model.setWatching(.menu, false)
+        system.levels[3] = DDCBus.Level(value: 10, maximum: 100)
+        model.setWatching(.settings, false)
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(model.screens.first?.brightness ?? 0, 0.4, accuracy: 0.0001, "stopped")
+    }
+
+    func testNightShiftChangesMadeElsewhereAreFollowed() {
+        model = make([monitor])
+        XCTAssertEqual(model.nightShift, NightShiftStatus(isOn: false))
+        system.night = NightShiftStatus(isOn: true)
+        system.onNightShiftChange?()
+        XCTAssertEqual(model.nightShift, NightShiftStatus(isOn: true))
     }
 
     func testNightShiftIsHiddenWhenMacOSHasNone() async {

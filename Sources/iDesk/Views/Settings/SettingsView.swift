@@ -350,7 +350,7 @@ private struct ScreenTuningSections: View {
 
     private static func footer(hardware: Bool) -> LocalizedStringKey {
         if hardware {
-            return "Brightness changes the screen's own backlight. Warmth tints the picture and lasts while iDesk runs."
+            return "Brightness and Color mode change the screen itself. Warmth tints the picture and lasts while iDesk runs."
         }
         return "This screen does not accept brightness commands (some cables and docks do not pass them), so iDesk darkens the picture instead. Keep the screen's own brightness high. Warmth tints the picture and lasts while iDesk runs."
     }
@@ -382,6 +382,14 @@ private struct ScreenTuningSections: View {
                     }
                     .labelsHidden()
                     .frame(maxWidth: 260)
+                }
+                if !screen.colorPresets.isEmpty {
+                    Picker("Color mode", selection: Binding(
+                        get: { screen.colorPreset ?? screen.colorPresets[0].value },
+                        set: { tuning.setColorPreset($0, for: screen.id) }
+                    )) {
+                        ForEach(screen.colorPresets) { Text($0.name).tag($0.value) }
+                    }
                 }
                 if screen.warmth > 0 || (!screen.usesHardware && screen.brightness < 1) {
                     Button("Reset Colors") { tuning.resetColors(for: screen.id) }

@@ -102,11 +102,14 @@ final class MenuBarViewModel: ObservableObject {
         windowSelection = desktops.captureWindowForMove()
         desktops.reload()
         displays.refresh()
-        if let tuning {
-            tuning.refreshNightShift()
-            Task { await tuning.reload() }
-        }
+        tuning?.refreshNightShift()
         updateTitle()
+    }
+
+    /// While the menu is open the screens are read again, so its sliders
+    /// and ticks follow the screen's own buttons.
+    func menuVisibilityChanged(isOpen: Bool) {
+        tuning?.setWatching(.menu, isOpen)
     }
 
     var sections: [DesktopSection] {

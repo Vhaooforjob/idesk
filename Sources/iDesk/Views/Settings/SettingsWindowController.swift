@@ -38,6 +38,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         viewModel?.preview.setRenderingEnabled(false)
+        viewModel?.tuning?.setWatching(.settings, false)
     }
 
     func windowDidChangeOcclusionState(_ notification: Notification) {
@@ -45,6 +46,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
     private func updatePreviewVisibility() {
-        viewModel?.preview.setRenderingEnabled(window?.occlusionState.contains(.visible) == true)
+        let visible = window?.occlusionState.contains(.visible) == true
+        viewModel?.preview.setRenderingEnabled(visible)
+        // The screens are read again while the window is in view, so it
+        // follows changes made with the screen's own buttons.
+        viewModel?.tuning?.setWatching(.settings, visible)
     }
 }

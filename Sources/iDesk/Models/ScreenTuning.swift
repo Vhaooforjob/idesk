@@ -31,6 +31,32 @@ struct ScreenTuning: Codable, Equatable {
     }
 }
 
+/// One of the color modes a screen offers through DDC/CI ("Select color
+/// preset"), such as sRGB or 6500 K.
+struct ColorPreset: Identifiable, Equatable {
+    let value: Int
+    var id: Int { value }
+
+    var name: String {
+        switch value {
+        case 0x01: String(localized: "sRGB")
+        case 0x02: String(localized: "Native")
+        case 0x03: "4000 K"
+        case 0x04: "5000 K"
+        case 0x05: "6500 K"
+        case 0x06: "7500 K"
+        case 0x07: "8200 K"
+        case 0x08: "9300 K"
+        case 0x09: "10000 K"
+        case 0x0A: "11500 K"
+        case 0x0B: String(localized: "User 1")
+        case 0x0C: String(localized: "User 2")
+        case 0x0D: String(localized: "User 3")
+        default: String(localized: "Mode \(value)")
+        }
+    }
+}
+
 /// How a screen's brightness is changed.
 enum BrightnessControl: Equatable {
     /// The screen's own backlight, through DDC/CI. `maximum` is what the

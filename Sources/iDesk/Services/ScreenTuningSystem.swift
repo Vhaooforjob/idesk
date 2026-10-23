@@ -13,11 +13,19 @@ protocol ScreenTuningSystem: AnyObject {
     /// The screen's own backlight, or nil when it does not answer.
     func hardwareBrightness(of id: CGDirectDisplayID) async -> DDCBus.Level?
     func setHardwareBrightness(_ value: Int, of id: CGDirectDisplayID) async -> Bool
+    /// Any other DDC/CI feature, such as the color preset.
+    func hardwareFeature(_ code: UInt8, of id: CGDirectDisplayID) async -> DDCBus.Level?
+    func setHardwareFeature(_ code: UInt8, to value: Int, of id: CGDirectDisplayID) async -> Bool
+    /// The features the screen says it has, each with the values it allows.
+    /// Slow: it takes a second or more.
+    func hardwareCapabilities(of id: CGDirectDisplayID) async -> [UInt8: [UInt8]]?
     func applyGain(_ gain: ScreenColor.Gain, to id: CGDirectDisplayID)
     /// Gives every screen back the colors macOS sends.
     func restoreColors()
     func nightShiftStatus() -> NightShiftStatus?
     func setNightShift(_ on: Bool) -> Bool
+    /// Called when Night Shift changes, whoever changed it.
+    var onNightShiftChange: (() -> Void)? { get set }
 }
 
 @MainActor
@@ -57,6 +65,30 @@ final class LiveScreenTuningSystem: ScreenTuningSystem {
         }
     }
 
+    func hardwareFeature(_ code: UInt8, of id: CGDirectDisplayID) async -> DDCBus.Level? {
+        guard let channel = channels[id] else { return nil }
+        let bus = bus
+        return await withCheckedContinuation { continuation in
+            queue.async { continuation.resume(returning: bus.feature(code, of: channel)) }
+        }
+    }
+
+    func setHardwareFeature(_ code: UInt8, to value: Int, of id: CGDirectDisplayID) async -> Bool {
+        guard let channel = channels[id] else { return false }
+        let bus = bus
+        return await withCheckedContinuation { continuation in
+            queue.async { continuation.resume(returning: bus.setFeature(code, to: value, of: channel)) }
+        }
+    }
+
+    func hardwareCapabilities(of id: CGDirectDisplayID) async -> [UInt8: [UInt8]]? {
+        guard let channel = channels[id] else { return nil }
+        let bus = bus
+        return await withCheckedContinuation { continuation in
+            queue.async { continuation.resume(returning: bus.capabilities(of: channel).map(DDCBus.features(in:))) }
+        }
+    }
+
     func applyGain(_ gain: ScreenColor.Gain, to id: CGDirectDisplayID) {
         CGSetDisplayTransferByFormula(id, 0, CGGammaValue(gain.red), 1, 0, CGGammaValue(gain.green), 1,
                                       0, CGGammaValue(gain.blue), 1)
@@ -64,6 +96,11 @@ final class LiveScreenTuningSystem: ScreenTuningSystem {
 
     func restoreColors() {
         CGDisplayRestoreColorSyncSettings()
+    }
+
+    var onNightShiftChange: (() -> Void)? {
+        get { nightShift.onChange }
+        set { nightShift.onChange = newValue }
     }
 
     func nightShiftStatus() -> NightShiftStatus? { nightShift.status() }
